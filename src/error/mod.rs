@@ -1,0 +1,9 @@
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum RequestError {
+    #[error("unsupported command `{0}`")]
+    UnsupportedCommand(String),
+    #[error("unknown request error")]
+    Unknown,
+}
