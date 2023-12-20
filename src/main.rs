@@ -13,7 +13,7 @@ fn main() {
     }
 }
 
-fn parse_request(request: Vec<String>) -> (String, String) {
+fn parse_request(request: String) -> (String, String) {
     todo!()
 }
 
@@ -22,14 +22,13 @@ fn handle_request(cmd: String, body: String) {
 }
 
 fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
-    let tcp_request: Vec<String> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+    let mut buf_reader = BufReader::new(&stream);
+    let mut request = String::new();
+    if buf_reader.read_line(&mut request).is_err() {
+        return;
+    }
 
-    let (cmd, body) = parse_request(tcp_request);
+    let (cmd, body) = parse_request(request);
     let result = handle_request(cmd, body);
 
     let response = "HTTP/1.1 200 OK\r\n\r\n";
