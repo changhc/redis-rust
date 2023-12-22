@@ -1,11 +1,10 @@
+use log;
+use redis_rust::command::{Command, CommandFactory};
+use redis_rust::parse_request;
 use std::{
-    io::{prelude::*, BufReader},
+    io::prelude::*,
     net::{TcpListener, TcpStream},
 };
-mod error;
-mod types;
-use log;
-use types::request::{Command, CommandFactory};
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
@@ -17,17 +16,11 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
-    let mut buf_reader = BufReader::new(&stream);
-    let mut request = String::new();
-    if buf_reader.read_line(&mut request).is_err() {
-        return;
-    }
-    log::info!("Request: {}", request);
-
+    let tokens = parse_request(&stream);
     let cmd = CommandFactory::new(&vec!["PING".to_string()]);
     match cmd {
         Ok(c) => {
-            let msg: String = (*c.execute()).to_string();
+            let msg: String = (*c.execute()).serialise();
             println!("{}", msg);
             stream.write_all(&msg.as_bytes()).unwrap();
         }
