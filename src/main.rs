@@ -1,10 +1,6 @@
 use log;
-use redis_rust::command::{Command, CommandFactory};
 use redis_rust::parse_request;
-use std::{
-    io::prelude::*,
-    net::{TcpListener, TcpStream},
-};
+use std::net::{TcpListener, TcpStream};
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
@@ -16,13 +12,9 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
-    let tokens = parse_request(&stream);
-    let cmd = CommandFactory::new(&vec!["PING".to_string()]);
-    match cmd {
-        Ok(c) => {
-            let msg: String = (*c.execute()).serialise();
-            println!("{}", msg);
-            stream.write_all(&msg.as_bytes()).unwrap();
+    match parse_request(&stream) {
+        Ok(tokens) => {
+            println!("{:?}", tokens);
         }
         Err(e) => log::error!("Error parsing request: {}", e),
     }
