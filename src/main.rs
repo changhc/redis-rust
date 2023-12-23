@@ -18,12 +18,12 @@ fn main() {
 fn handle_connection(mut stream: TcpStream) {
     match parse_request(&stream) {
         Ok(tokens) => {
-            println!("{:?}", tokens);
+            log::info!("tokens: {:?}", tokens);
             let cmd = CommandFactory::new(&tokens);
             match cmd {
                 Ok(c) => {
                     let msg: String = (*c.execute()).serialise();
-                    println!("{}", msg);
+                    log::info!("response: {}", msg);
                     stream.write_all(&msg.as_bytes()).unwrap();
                 }
                 Err(e) => log::error!("Error parsing request: {}", e),
