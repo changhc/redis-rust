@@ -1,6 +1,7 @@
 use crate::command::Command;
 use crate::error::SetCommandError;
 use crate::execution_result::{ExecutionResult, SetResult};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct SetCommand {
@@ -25,7 +26,8 @@ impl SetCommand {
 }
 
 impl Command for SetCommand {
-    fn execute(&self) -> Box<dyn ExecutionResult> {
+    fn execute(&self, data_store: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
+        data_store.insert(self.key.clone(), self.value.clone());
         Box::new(SetResult {})
     }
 }
