@@ -1,5 +1,6 @@
+use env_logger;
 use log;
-use redis_rust::command::{Command, CommandFactory};
+use redis_rust::command::CommandFactory;
 use redis_rust::parse_request;
 use std::{
     io::prelude::*,
@@ -7,6 +8,7 @@ use std::{
 };
 
 fn main() {
+    env_logger::init();
     let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
 
     for stream in listener.incoming() {
