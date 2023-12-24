@@ -71,7 +71,7 @@ mod test {
                 assert_eq!(v.key, "foo".to_string());
                 assert_eq!(v.value, "bar".to_string());
             }
-            Err(_) => panic!("should not be ok"),
+            Err(_) => panic!("should be ok"),
         }
     }
 
