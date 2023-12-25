@@ -1,5 +1,8 @@
+use crate::execution_result::ExecutionResult;
+
 use super::command::CommandFactory;
 use super::error::RequestError;
+use super::execution_result::ErrorResult;
 use log;
 use regex::Regex;
 use std::collections::HashMap;
@@ -12,9 +15,11 @@ pub fn load_data_store() -> HashMap<String, String> {
 }
 
 pub fn handle_error(mut stream: TcpStream, error_message: String) {
-    log::error!("Error: {}", error_message);
-    let out = format!("-ERR {}\r\n", error_message);
-    stream.write_all(&out.as_bytes()).unwrap();
+    log::error!("Error: {}", &error_message);
+    let err = ErrorResult {
+        message: error_message,
+    };
+    stream.write_all(err.serialise().as_bytes()).unwrap();
 }
 
 pub fn handle_connection(
