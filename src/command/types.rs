@@ -3,6 +3,7 @@ use std::str::FromStr;
 pub enum CommandType {
     PING,
     SET,
+    GET,
 }
 
 impl FromStr for CommandType {
@@ -12,6 +13,7 @@ impl FromStr for CommandType {
         match s {
             "PING" => Ok(CommandType::PING),
             "SET" => Ok(CommandType::SET),
+            "GET" => Ok(CommandType::GET),
             _ => Err(()),
         }
     }

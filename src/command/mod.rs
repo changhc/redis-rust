@@ -1,7 +1,9 @@
 mod base;
+mod get;
 mod ping;
 use super::error::RequestError;
 pub use base::Command;
+use get::GetCommand;
 use ping::PingCommand;
 mod set;
 use set::SetCommand;
@@ -20,6 +22,13 @@ impl CommandFactory {
             Ok(c) => match c {
                 CommandType::PING => Ok(Box::new(PingCommand::new(body))),
                 CommandType::SET => match SetCommand::new(body) {
+                    Ok(v) => Ok(Box::new(v)),
+                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
+                        command,
+                        e.to_string(),
+                    ))),
+                },
+                CommandType::GET => match GetCommand::new(body) {
                     Ok(v) => Ok(Box::new(v)),
                     Err(e) => Err(Box::new(RequestError::InvalidCommand(
                         command,
