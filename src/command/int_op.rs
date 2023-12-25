@@ -77,7 +77,7 @@ mod test {
     use crate::error::IncrCommandError;
 
     #[test]
-    fn should_accept_exactly_two_tokens() {
+    fn should_accept_exactly_one_token() {
         match IncrCommand::new(vec!["foo".to_string(), "bar".to_string()]) {
             Ok(_) => panic!("should not be ok"),
             Err(e) => {
