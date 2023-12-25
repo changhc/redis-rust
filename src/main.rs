@@ -1,6 +1,10 @@
 use log;
+use redis_rust::command::{Command, CommandFactory};
 use redis_rust::parse_request;
-use std::net::{TcpListener, TcpStream};
+use std::{
+    io::prelude::*,
+    net::{TcpListener, TcpStream},
+};
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
@@ -14,7 +18,16 @@ fn main() {
 fn handle_connection(mut stream: TcpStream) {
     match parse_request(&stream) {
         Ok(tokens) => {
-            println!("{:?}", tokens);
+            log::info!("tokens: {:?}", tokens);
+            let cmd = CommandFactory::new(&tokens);
+            match cmd {
+                Ok(c) => {
+                    let msg: String = (*c.execute()).serialise();
+                    log::info!("response: {}", msg);
+                    stream.write_all(&msg.as_bytes()).unwrap();
+                }
+                Err(e) => log::error!("Error parsing request: {}", e),
+            }
         }
         Err(e) => log::error!("Error parsing request: {}", e),
     }
