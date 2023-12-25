@@ -21,30 +21,30 @@ impl CommandFactory {
         let command = tokens[0].clone();
         let body = tokens[1..tokens.len()].into();
         match CommandType::from_str(&command) {
-            Ok(c) => match c {
-                CommandType::PING => Ok(Box::new(PingCommand::new(body))),
-                CommandType::SET => match SetCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
-                },
-                CommandType::GET => match GetCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
-                },
-                CommandType::INCR => match IncrCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
-                },
-            },
+            Ok(c) => {
+                let e = match c {
+                    CommandType::PING => match PingCommand::new(body) {
+                        Ok(v) => return Ok(Box::new(v)),
+                        Err(e) => e,
+                    },
+                    CommandType::SET => match SetCommand::new(body) {
+                        Ok(v) => return Ok(Box::new(v)),
+                        Err(e) => e,
+                    },
+                    CommandType::GET => match GetCommand::new(body) {
+                        Ok(v) => return Ok(Box::new(v)),
+                        Err(e) => e,
+                    },
+                    CommandType::INCR => match IncrCommand::new(body) {
+                        Ok(v) => return Ok(Box::new(v)),
+                        Err(e) => e,
+                    },
+                };
+                Err(Box::new(RequestError::InvalidCommand(
+                    command,
+                    e.to_string(),
+                )))
+            }
             Err(_) => Err(Box::new(RequestError::UnsupportedCommand(command))),
         }
     }

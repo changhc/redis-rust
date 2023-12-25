@@ -10,13 +10,13 @@ pub struct SetCommand {
 }
 
 impl SetCommand {
-    pub fn new(tokens: Vec<String>) -> Result<Self, SetCommandError> {
+    pub fn new(tokens: Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
         if tokens.len() != 2 {
-            return Err(SetCommandError::InvalidBody(format!(
+            return Err(Box::new(SetCommandError::InvalidBody(format!(
                 "Expected number of tokens: {}, received: {}",
                 2,
                 tokens.len()
-            )));
+            ))));
         }
         Ok(SetCommand {
             key: tokens[0].clone(),

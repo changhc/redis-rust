@@ -13,6 +13,12 @@ pub enum RequestError {
 }
 
 #[derive(Error, Debug)]
+pub enum PingCommandError {
+    #[error("invalid command body. Details: {0}")]
+    InvalidBody(String),
+}
+
+#[derive(Error, Debug)]
 pub enum SetCommandError {
     #[error("invalid command body. Details: {0}")]
     InvalidBody(String),

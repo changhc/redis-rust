@@ -9,13 +9,13 @@ pub struct GetCommand {
 }
 
 impl GetCommand {
-    pub fn new(tokens: Vec<String>) -> Result<Self, GetCommandError> {
+    pub fn new(tokens: Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
         if tokens.len() != 1 {
-            return Err(GetCommandError::InvalidBody(format!(
+            return Err(Box::new(GetCommandError::InvalidBody(format!(
                 "Expected number of tokens: {}, received: {}",
                 1,
                 tokens.len()
-            )));
+            ))));
         }
         Ok(GetCommand {
             key: tokens[0].clone(),
