@@ -7,7 +7,7 @@ use std::collections::HashMap;
 pub struct PingCommand;
 
 impl PingCommand {
-    pub fn new(tokens: Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(tokens: Vec<String>) -> Result<Box<Self>, Box<dyn std::error::Error>> {
         if tokens.len() != 0 {
             return Err(Box::new(PingCommandError::InvalidBody(format!(
                 "Expected number of tokens: {}, received: {}",
@@ -15,7 +15,7 @@ impl PingCommand {
                 tokens.len()
             ))));
         }
-        Ok(PingCommand {})
+        Ok(Box::new(PingCommand {}))
     }
 }
 

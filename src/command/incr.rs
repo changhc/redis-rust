@@ -9,7 +9,7 @@ pub struct IncrCommand {
 }
 
 impl IncrCommand {
-    pub fn new(tokens: Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(tokens: Vec<String>) -> Result<Box<Self>, Box<dyn std::error::Error>> {
         if tokens.len() != 1 {
             return Err(Box::new(IncrCommandError::InvalidBody(format!(
                 "Expected number of tokens: {}, received: {}",
@@ -17,9 +17,9 @@ impl IncrCommand {
                 tokens.len()
             ))));
         }
-        Ok(IncrCommand {
+        Ok(Box::new(IncrCommand {
             key: tokens[0].clone(),
-        })
+        }))
     }
 }
 
