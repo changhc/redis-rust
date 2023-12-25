@@ -1,8 +1,13 @@
 use super::error::RequestError;
 use regex::Regex;
+use std::collections::HashMap;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::TcpStream;
+
+pub fn load_data_store() -> HashMap<String, String> {
+    HashMap::<String, String>::new()
+}
 
 pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
     let array_regex = Regex::new(r"^\*(\d+)\r\n$").unwrap();
