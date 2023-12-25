@@ -17,3 +17,9 @@ pub enum SetCommandError {
     #[error("invalid command body. Details: {0}")]
     InvalidBody(String),
 }
+
+#[derive(Error, Debug)]
+pub enum GetCommandError {
+    #[error("invalid command body. Details: {0}")]
+    InvalidBody(String),
+}
