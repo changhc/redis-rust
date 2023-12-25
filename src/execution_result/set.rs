@@ -1,5 +1,6 @@
-pub struct SetResult;
 use super::{ExecutionResult, ResultType};
+
+pub struct SetResult;
 
 impl ExecutionResult for SetResult {
     fn get_result_type(&self) -> super::ResultType {

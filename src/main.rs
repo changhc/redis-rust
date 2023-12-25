@@ -1,17 +1,17 @@
 use env_logger;
-use redis_rust::utils::*;
+use redis_rust::utils;
 use std::net::TcpListener;
 
 fn main() {
     env_logger::init();
-    let mut data_store = load_data_store();
+    let mut data_store = utils::load_data_store();
     let listener = TcpListener::bind("127.0.0.1:6379").unwrap();
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        match handle_connection(&stream, &mut data_store) {
+        match utils::handle_connection(&stream, &mut data_store) {
             Ok(_) => (),
-            Err(e) => handle_error(stream, e),
+            Err(e) => utils::handle_error(stream, e),
         };
     }
 }
