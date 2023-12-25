@@ -1,5 +1,5 @@
 use crate::command::Command;
-use crate::error::SetCommandError;
+use crate::error::RequestError;
 use crate::execution_result::{ExecutionResult, SetResult};
 use std::collections::HashMap;
 
@@ -10,13 +10,13 @@ pub struct SetCommand {
 }
 
 impl SetCommand {
-    pub fn new(tokens: Vec<String>) -> Result<Box<Self>, Box<dyn std::error::Error>> {
+    pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
         if tokens.len() != 2 {
-            return Err(Box::new(SetCommandError::InvalidBody(format!(
+            return Err(RequestError::InvalidCommandBody(format!(
                 "Expected number of tokens: {}, received: {}",
                 2,
                 tokens.len()
-            ))));
+            )));
         }
         Ok(Box::new(SetCommand {
             key: tokens[0].clone(),
