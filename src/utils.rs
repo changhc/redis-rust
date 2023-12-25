@@ -26,12 +26,15 @@ pub fn handle_connection(
             log::info!("tokens: {:?}", tokens);
             let cmd = CommandFactory::new(&tokens);
             match cmd {
-                Ok(c) => {
-                    let msg: String = (*c.execute(data_store)).serialise();
-                    log::info!("response: {}", msg);
-                    stream.write_all(&msg.as_bytes()).unwrap();
-                    Ok(())
-                }
+                Ok(c) => match c.execute(data_store) {
+                    Ok(res) => {
+                        let msg: String = (*res).serialise();
+                        log::info!("response: {}", msg);
+                        stream.write_all(&msg.as_bytes()).unwrap();
+                        Ok(())
+                    }
+                    Err(e) => Err(e.to_string()),
+                },
                 Err(e) => Err(e.to_string()),
             }
         }

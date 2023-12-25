@@ -24,11 +24,14 @@ impl GetCommand {
 }
 
 impl Command for GetCommand {
-    fn execute(&self, data_store: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
+    fn execute(
+        &self,
+        data_store: &mut HashMap<String, String>,
+    ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
         let value = data_store.get(&self.key);
-        Box::new(GetResult {
+        Ok(Box::new(GetResult {
             value: value.unwrap().clone(),
-        })
+        }))
     }
 }
 
@@ -66,6 +69,6 @@ mod test {
         let mut ds = HashMap::<String, String>::new();
         ds.insert("foo".to_string(), "bar".to_string());
         let result = cmd.execute(&mut ds);
-        assert_eq!(result.to_string(), "bar".to_string());
+        assert_eq!(result.unwrap().to_string(), "bar".to_string());
     }
 }

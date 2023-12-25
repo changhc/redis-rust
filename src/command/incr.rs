@@ -24,17 +24,21 @@ impl IncrCommand {
 }
 
 impl Command for IncrCommand {
-    fn execute(&self, data_store: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
-        let curr_value = data_store.get(&self.key).unwrap_or(&"0".to_string());
+    fn execute(
+        &self,
+        data_store: &mut HashMap<String, String>,
+    ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
+        let default = "0".to_string();
+        let curr_value = data_store.get(&self.key).unwrap_or(&default);
         match curr_value.parse::<i64>() {
             Ok(v) => match v.checked_add(1) {
                 Some(updated) => {
                     data_store.insert(self.key.clone(), updated.to_string());
-                    Box::new(IncrResult { value: updated })
+                    Ok(Box::new(IncrResult { value: updated }))
                 }
-                None => Err(IncrCommandError::InvalidValue),
+                None => Err(Box::new(IncrCommandError::InvalidValue)),
             },
-            Err(_) => Err(IncrCommandError::InvalidValue),
+            Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
         }
     }
 }
@@ -46,6 +50,7 @@ mod test {
     use crate::command::Command;
 
     use super::IncrCommand;
+    use crate::error::IncrCommandError;
 
     #[test]
     fn should_accept_exactly_two_tokens() {
@@ -72,7 +77,7 @@ mod test {
         let cmd = IncrCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
         assert!(ds.get(&"foo".to_string()).is_none());
-        cmd.execute(&mut ds);
+        cmd.execute(&mut ds).unwrap();
         assert_eq!(ds.get(&"foo".to_string()).unwrap(), &"1".to_string());
     }
 
@@ -80,7 +85,7 @@ mod test {
     fn should_throw_error_when_value_is_not_int() {
         let cmd = IncrCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
-        ds.insert("foo".to_string(), "bar".to_string()).unwrap();
+        ds.insert("foo".to_string(), "bar".to_string());
         assert!(cmd.execute(&mut ds).is_err());
     }
 
@@ -88,7 +93,10 @@ mod test {
     fn should_throw_error_when_value_overflows() {
         let cmd = IncrCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
-        ds.insert("foo".to_string(), i64::MAX.to_string()).unwrap();
-        assert!(cmd.execute(&mut ds).is_err());
+        ds.insert("foo".to_string(), i64::MAX.to_string());
+        match cmd.execute(&mut ds) {
+            Ok(_) => panic!("should not be ok"),
+            Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
+        }
     }
 }

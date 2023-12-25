@@ -26,9 +26,12 @@ impl SetCommand {
 }
 
 impl Command for SetCommand {
-    fn execute(&self, data_store: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
+    fn execute(
+        &self,
+        data_store: &mut HashMap<String, String>,
+    ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
         data_store.insert(self.key.clone(), self.value.clone());
-        Box::new(SetResult {})
+        Ok(Box::new(SetResult {}))
     }
 }
 
@@ -80,7 +83,7 @@ mod test {
         let cmd = SetCommand::new(vec!["foo".to_string(), "bar".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
         assert!(ds.get(&"foo".to_string()).is_none());
-        cmd.execute(&mut ds);
+        cmd.execute(&mut ds).unwrap();
         assert_eq!(ds.get(&"foo".to_string()).unwrap(), &"bar".to_string());
     }
 }
