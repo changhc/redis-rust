@@ -1,4 +1,6 @@
+use super::command::CommandFactory;
 use super::error::RequestError;
+use log;
 use regex::Regex;
 use std::collections::HashMap;
 use std::io::prelude::*;
@@ -7,6 +9,34 @@ use std::net::TcpStream;
 
 pub fn load_data_store() -> HashMap<String, String> {
     HashMap::<String, String>::new()
+}
+
+pub fn handle_error(mut stream: TcpStream, error_message: String) {
+    log::error!("Error: {}", error_message);
+    let out = format!("-ERR {}\r\n", error_message);
+    stream.write_all(&out.as_bytes()).unwrap();
+}
+
+pub fn handle_connection(
+    mut stream: &TcpStream,
+    data_store: &mut HashMap<String, String>,
+) -> Result<(), String> {
+    return match parse_request(stream) {
+        Ok(tokens) => {
+            log::info!("tokens: {:?}", tokens);
+            let cmd = CommandFactory::new(&tokens);
+            match cmd {
+                Ok(c) => {
+                    let msg: String = (*c.execute(data_store)).serialise();
+                    log::info!("response: {}", msg);
+                    stream.write_all(&msg.as_bytes()).unwrap();
+                    Ok(())
+                }
+                Err(e) => Err(e.to_string()),
+            }
+        }
+        Err(e) => Err(e.to_string()),
+    };
 }
 
 pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
