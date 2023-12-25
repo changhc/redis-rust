@@ -4,8 +4,39 @@ use crate::execution_result::{ExecutionResult, IncrResult};
 use std::collections::HashMap;
 
 #[derive(Debug)]
+struct NumOp {
+    value: i64,
+}
+
+impl NumOp {
+    pub fn new(value: &i64) -> Self {
+        Self { value: *value }
+    }
+
+    pub fn execute(
+        &self,
+        key: &String,
+        data_store: &mut HashMap<String, String>,
+    ) -> Result<i64, ()> {
+        let default = "0".to_string();
+        let curr_value = data_store.get(key).unwrap_or(&default);
+        match curr_value.parse::<i64>() {
+            Ok(v) => match v.checked_add(self.value) {
+                Some(updated) => {
+                    data_store.insert(key.clone(), updated.to_string());
+                    Ok(updated)
+                }
+                None => Err(()),
+            },
+            Err(_) => Err(()),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct IncrCommand {
     key: String,
+    op: NumOp,
 }
 
 impl IncrCommand {
@@ -19,6 +50,7 @@ impl IncrCommand {
         }
         Ok(IncrCommand {
             key: tokens[0].clone(),
+            op: NumOp::new(&1),
         })
     }
 }
@@ -28,16 +60,8 @@ impl Command for IncrCommand {
         &self,
         data_store: &mut HashMap<String, String>,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        let default = "0".to_string();
-        let curr_value = data_store.get(&self.key).unwrap_or(&default);
-        match curr_value.parse::<i64>() {
-            Ok(v) => match v.checked_add(1) {
-                Some(updated) => {
-                    data_store.insert(self.key.clone(), updated.to_string());
-                    Ok(Box::new(IncrResult { value: updated }))
-                }
-                None => Err(Box::new(IncrCommandError::InvalidValue)),
-            },
+        match self.op.execute(&self.key, data_store) {
+            Ok(v) => Ok(Box::new(IncrResult { value: v })),
             Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
         }
     }
