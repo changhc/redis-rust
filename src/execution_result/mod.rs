@@ -6,5 +6,7 @@ mod set;
 pub use set::SetResult;
 mod get;
 pub use get::GetResult;
+mod incr;
+pub use incr::IncrResult;
 mod types;
 pub use types::ResultType;

@@ -4,6 +4,7 @@ pub enum CommandType {
     PING,
     SET,
     GET,
+    INCR,
 }
 
 impl FromStr for CommandType {
@@ -14,6 +15,7 @@ impl FromStr for CommandType {
             "PING" => Ok(CommandType::PING),
             "SET" => Ok(CommandType::SET),
             "GET" => Ok(CommandType::GET),
+            "INCR" => Ok(CommandType::INCR),
             _ => Err(()),
         }
     }
