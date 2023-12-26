@@ -9,6 +9,6 @@ impl ExecutionResult for ErrorResult {
         ResultType::SimpleError
     }
     fn to_string(&self) -> String {
-        format!("ERR {}", self.message).to_string()
+        self.message.clone()
     }
 }
