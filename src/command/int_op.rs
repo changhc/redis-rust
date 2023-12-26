@@ -237,5 +237,18 @@ mod test {
                 Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
             }
         }
+
+        #[test]
+        fn should_throw_error_when_value_overflows_decr() {
+            let cmd =
+                IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], OpMultiplier::DECR)
+                    .unwrap();
+            let mut ds = HashMap::<String, String>::new();
+            ds.insert("foo".to_string(), i64::MIN.to_string());
+            match cmd.execute(&mut ds) {
+                Ok(_) => panic!("should not be ok"),
+                Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
+            }
+        }
     }
 }

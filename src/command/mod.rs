@@ -46,6 +46,10 @@ impl CommandFactory {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
+                CommandType::DECRBY => match IncrbyCommand::new(body, OpMultiplier::DECR) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
+                },
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),
         }
