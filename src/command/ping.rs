@@ -12,7 +12,10 @@ impl PingCommand {
 }
 
 impl Command for PingCommand {
-    fn execute(&self, _: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
-        Box::new(PingResult {})
+    fn execute(
+        &self,
+        _: &mut HashMap<String, String>,
+    ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
+        Ok(Box::new(PingResult {}))
     }
 }

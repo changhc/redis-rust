@@ -24,14 +24,17 @@ impl GetCommand {
 }
 
 impl Command for GetCommand {
-    fn execute(&self, data_store: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
+    fn execute(
+        &self,
+        data_store: &mut HashMap<String, String>,
+    ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
         let value = data_store.get(&self.key);
-        Box::new(GetResult {
+        Ok(Box::new(GetResult {
             value: match value {
                 Some(v) => Some(v.clone()),
                 None => None,
             },
-        })
+        }))
     }
 }
 
@@ -69,7 +72,7 @@ mod test {
         let mut ds = HashMap::<String, String>::new();
         ds.insert("foo".to_string(), "bar".to_string());
         let result = cmd.execute(&mut ds);
-        assert_eq!(result.to_string(), "bar".to_string());
+        assert_eq!(result.unwrap().to_string(), "bar".to_string());
     }
 
     #[test]
@@ -77,6 +80,6 @@ mod test {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
         let result = cmd.execute(&mut ds);
-        assert_eq!(result.to_string(), "".to_string());
+        assert_eq!(result.unwrap().to_string(), "".to_string());
     }
 }

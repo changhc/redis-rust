@@ -7,6 +7,8 @@ use get::GetCommand;
 use ping::PingCommand;
 mod set;
 use set::SetCommand;
+mod int_op;
+use int_op::IncrCommand;
 mod types;
 use std::str::FromStr;
 use types::CommandType;
@@ -29,6 +31,13 @@ impl CommandFactory {
                     ))),
                 },
                 CommandType::GET => match GetCommand::new(body) {
+                    Ok(v) => Ok(Box::new(v)),
+                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
+                        command,
+                        e.to_string(),
+                    ))),
+                },
+                CommandType::INCR => match IncrCommand::new(body) {
                     Ok(v) => Ok(Box::new(v)),
                     Err(e) => Err(Box::new(RequestError::InvalidCommand(
                         command,

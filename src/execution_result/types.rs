@@ -4,6 +4,7 @@ pub enum ResultType {
     SimpleString,
     SimpleError,
     Null,
+    Integer,
 }
 
 impl Display for ResultType {
@@ -12,6 +13,7 @@ impl Display for ResultType {
             ResultType::SimpleString => "+",
             ResultType::SimpleError => "-",
             ResultType::Null => "_",
+            ResultType::Integer => ":",
         };
         write!(f, "{}", s)
     }
