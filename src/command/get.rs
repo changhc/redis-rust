@@ -80,6 +80,6 @@ mod test {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
         let result = cmd.execute(&mut ds);
-        assert_eq!(result.to_string(), "".to_string());
+        assert_eq!(result.unwrap().to_string(), "".to_string());
     }
 }
