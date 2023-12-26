@@ -1,7 +1,7 @@
 use crate::command::Command;
+use crate::data_store::DataStore;
 use crate::error::RequestError;
 use crate::execution_result::{ExecutionResult, GetResult};
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct GetCommand {
@@ -26,9 +26,9 @@ impl GetCommand {
 impl Command for GetCommand {
     fn execute(
         &self,
-        data_store: &mut HashMap<String, String>,
+        data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        let value = data_store.get(&self.key);
+        let value = data_store.get_string_store().get(&self.key);
         Ok(Box::new(GetResult {
             value: match value {
                 Some(v) => Some(v.clone()),
@@ -40,7 +40,7 @@ impl Command for GetCommand {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
+    use crate::data_store::DataStore;
 
     use crate::command::Command;
 
@@ -69,8 +69,9 @@ mod test {
     #[test]
     fn should_get_value_if_key_exists() {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
-        let mut ds = HashMap::<String, String>::new();
-        ds.insert("foo".to_string(), "bar".to_string());
+        let mut ds = DataStore::new();
+        ds.get_string_store()
+            .insert("foo".to_string(), "bar".to_string());
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "bar".to_string());
     }
@@ -78,7 +79,7 @@ mod test {
     #[test]
     fn should_return_null_if_key_does_not_exist() {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
-        let mut ds = HashMap::<String, String>::new();
+        let mut ds = DataStore::new();
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "".to_string());
     }

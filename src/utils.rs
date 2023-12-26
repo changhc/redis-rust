@@ -3,16 +3,12 @@ use crate::execution_result::ExecutionResult;
 use super::command::CommandFactory;
 use super::error::RequestError;
 use super::execution_result::ErrorResult;
+use crate::data_store::DataStore;
 use log;
 use regex::Regex;
-use std::collections::HashMap;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::TcpStream;
-
-pub fn load_data_store() -> HashMap<String, String> {
-    HashMap::<String, String>::new()
-}
 
 pub fn handle_error(mut stream: TcpStream, error_message: String) {
     log::error!("Error: {}", &error_message);
@@ -22,10 +18,7 @@ pub fn handle_error(mut stream: TcpStream, error_message: String) {
     stream.write_all(err.serialise().as_bytes()).unwrap();
 }
 
-pub fn handle_connection(
-    mut stream: &TcpStream,
-    data_store: &mut HashMap<String, String>,
-) -> Result<(), String> {
+pub fn handle_connection(mut stream: &TcpStream, data_store: &mut DataStore) -> Result<(), String> {
     return match parse_request(stream) {
         Ok(tokens) => {
             log::info!("tokens: {:?}", tokens);

@@ -1,7 +1,7 @@
 use crate::command::Command;
+use crate::data_store::DataStore;
 use crate::error::RequestError;
 use crate::execution_result::{ExecutionResult, SetResult};
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct SetCommand {
@@ -28,18 +28,18 @@ impl SetCommand {
 impl Command for SetCommand {
     fn execute(
         &self,
-        data_store: &mut HashMap<String, String>,
+        data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        data_store.insert(self.key.clone(), self.value.clone());
+        data_store
+            .get_string_store()
+            .insert(self.key.clone(), self.value.clone());
         Ok(Box::new(SetResult {}))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
-    use crate::command::Command;
+    use crate::{command::Command, data_store::DataStore};
 
     use super::SetCommand;
 
@@ -81,9 +81,12 @@ mod test {
     #[test]
     fn should_insert_value() {
         let cmd = SetCommand::new(vec!["foo".to_string(), "bar".to_string()]).unwrap();
-        let mut ds = HashMap::<String, String>::new();
-        assert!(ds.get(&"foo".to_string()).is_none());
+        let mut ds = DataStore::new();
+        assert!(ds.get_string_store().get(&"foo".to_string()).is_none());
         cmd.execute(&mut ds).unwrap();
-        assert_eq!(ds.get(&"foo".to_string()).unwrap(), &"bar".to_string());
+        assert_eq!(
+            ds.get_string_store().get(&"foo".to_string()).unwrap(),
+            &"bar".to_string()
+        );
     }
 }
