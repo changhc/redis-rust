@@ -123,10 +123,21 @@ mod test {
         }
 
         #[test]
-        fn should_throw_error_when_value_overflows() {
+        fn should_throw_error_when_value_overflows_incr() {
             let cmd = IncrCommand::new(vec!["foo".to_string()], 1).unwrap();
             let mut ds = HashMap::<String, String>::new();
             ds.insert("foo".to_string(), i64::MAX.to_string());
+            match cmd.execute(&mut ds) {
+                Ok(_) => panic!("should not be ok"),
+                Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
+            }
+        }
+
+        #[test]
+        fn should_throw_error_when_value_overflows_decr() {
+            let cmd = IncrCommand::new(vec!["foo".to_string()], -1).unwrap();
+            let mut ds = HashMap::<String, String>::new();
+            ds.insert("foo".to_string(), i64::MIN.to_string());
             match cmd.execute(&mut ds) {
                 Ok(_) => panic!("should not be ok"),
                 Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
