@@ -34,16 +34,13 @@ impl CommandFactory {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::INCR => match IncrCommand::new(body) {
+                CommandType::INCR => match IncrCommand::new(body, 1) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::INCR => match IncrCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
+                CommandType::DECR => match IncrCommand::new(body, -1) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
                 },
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),

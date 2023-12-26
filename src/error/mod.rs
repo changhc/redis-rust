@@ -19,11 +19,3 @@ pub enum IncrCommandError {
     #[error("value is not an integer or out of range")]
     InvalidValue,
 }
-
-#[derive(Error, Debug)]
-pub enum IncrCommandError {
-    #[error("invalid command body. Details: {0}")]
-    InvalidBody(String),
-    #[error("value is not an integer or out of range")]
-    InvalidValue,
-}
