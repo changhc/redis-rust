@@ -8,20 +8,16 @@ pub enum RequestError {
     UnsupportedCommand(String),
     #[error("invalid command `{0}`. Details: {1}")]
     InvalidCommand(String, String),
+    #[error("invalid command body. Details: {0}")]
+    InvalidCommandBody(String),
     #[error("unknown request error")]
     Unknown,
 }
 
 #[derive(Error, Debug)]
-pub enum SetCommandError {
-    #[error("invalid command body. Details: {0}")]
-    InvalidBody(String),
-}
-
-#[derive(Error, Debug)]
-pub enum GetCommandError {
-    #[error("invalid command body. Details: {0}")]
-    InvalidBody(String),
+pub enum IncrCommandError {
+    #[error("value is not an integer or out of range")]
+    InvalidValue,
 }
 
 #[derive(Error, Debug)]

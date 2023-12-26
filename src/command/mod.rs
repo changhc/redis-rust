@@ -17,25 +17,26 @@ use types::CommandType;
 pub struct CommandFactory;
 
 impl CommandFactory {
-    pub fn new(tokens: &Vec<String>) -> Result<Box<dyn Command>, Box<dyn std::error::Error>> {
+    pub fn new(tokens: &Vec<String>) -> Result<Box<dyn Command>, RequestError> {
         let command = tokens[0].clone();
         let body = tokens[1..tokens.len()].into();
         match CommandType::from_str(&command) {
             Ok(c) => match c {
-                CommandType::PING => Ok(Box::new(PingCommand::new(body))),
+                CommandType::PING => match PingCommand::new(body) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
+                },
                 CommandType::SET => match SetCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
                 },
                 CommandType::GET => match GetCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
+                },
+                CommandType::INCR => match IncrCommand::new(body) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
                 },
                 CommandType::INCR => match IncrCommand::new(body) {
                     Ok(v) => Ok(Box::new(v)),
@@ -45,7 +46,7 @@ impl CommandFactory {
                     ))),
                 },
             },
-            Err(_) => Err(Box::new(RequestError::UnsupportedCommand(command))),
+            Err(_) => Err(RequestError::UnsupportedCommand(command)),
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::command::Command;
-use crate::error::IncrCommandError;
+use crate::error::{IncrCommandError, RequestError};
 use crate::execution_result::{ExecutionResult, IntOpResult};
 use std::collections::HashMap;
 
@@ -40,18 +40,18 @@ pub struct IncrCommand {
 }
 
 impl IncrCommand {
-    pub fn new(tokens: Vec<String>) -> Result<Self, IncrCommandError> {
+    pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
         if tokens.len() != 1 {
-            return Err(IncrCommandError::InvalidBody(format!(
+            return Err(RequestError::InvalidCommandBody(format!(
                 "Expected number of tokens: {}, received: {}",
                 1,
                 tokens.len()
             )));
         }
-        Ok(IncrCommand {
+        Ok(Box::new(IncrCommand {
             key: tokens[0].clone(),
             op: IntOp::new(&1),
-        })
+        }))
     }
 }
 
