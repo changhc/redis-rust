@@ -10,6 +10,8 @@ pub enum RequestError {
     InvalidCommand(String, String),
     #[error("invalid command body. Details: {0}")]
     InvalidCommandBody(String),
+    #[error("value is not an integer or out of range")]
+    InvalidIntValue,
     #[error("unknown request error")]
     Unknown,
 }
