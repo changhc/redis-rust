@@ -101,10 +101,7 @@ impl IncrbyCommand {
                 key: tokens[0].clone(),
                 op: IntOp::new(&(increment * multiplier as i64)),
             })),
-            Err(_) => Err(RequestError::InvalidCommandBody(format!(
-                "Failed to parse parameter `increment`. Value: `{}`",
-                tokens[1]
-            ))),
+            Err(_) => Err(RequestError::InvalidIntValue),
         }
     }
 }
@@ -193,6 +190,7 @@ mod test {
     mod test_incrby {
         use super::super::IncrbyCommand;
         use crate::command::Command;
+        use crate::error::RequestError;
         use crate::{command::int_op::OpMultiplier, error::IncrCommandError};
         use std::collections::HashMap;
 
@@ -223,10 +221,7 @@ mod test {
                 OpMultiplier::INCR,
             ) {
                 Ok(_) => panic!("should not be ok"),
-                Err(e) => assert_eq!(
-                    e.to_string(),
-                    "invalid command body. Details: Failed to parse parameter `increment`. Value: `bar`".to_string()
-                ),
+                Err(e) => assert_eq!(e.to_string(), RequestError::InvalidIntValue.to_string()),
             }
         }
 
