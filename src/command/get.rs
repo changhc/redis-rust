@@ -27,7 +27,10 @@ impl Command for GetCommand {
     fn execute(&self, data_store: &mut HashMap<String, String>) -> Box<dyn ExecutionResult> {
         let value = data_store.get(&self.key);
         Box::new(GetResult {
-            value: value.unwrap().clone(),
+            value: match value {
+                Some(v) => Some(v.clone()),
+                None => None,
+            },
         })
     }
 }
@@ -61,11 +64,19 @@ mod test {
     }
 
     #[test]
-    fn should_get_value() {
+    fn should_get_value_if_key_exists() {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = HashMap::<String, String>::new();
         ds.insert("foo".to_string(), "bar".to_string());
         let result = cmd.execute(&mut ds);
         assert_eq!(result.to_string(), "bar".to_string());
+    }
+
+    #[test]
+    fn should_return_null_if_key_does_not_exist() {
+        let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
+        let mut ds = HashMap::<String, String>::new();
+        let result = cmd.execute(&mut ds);
+        assert_eq!(result.to_string(), "".to_string());
     }
 }
