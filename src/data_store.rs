@@ -1,58 +1,61 @@
 use std::collections::{HashMap, LinkedList};
 
-pub struct DataStore {
-    string: HashMap<String, String>,
-    list: HashMap<String, RedisList>,
+pub type DataStore = HashMap<String, RedisEntry>;
+
+pub enum RedisEntryType {
+    String,
+    List,
 }
 
-impl DataStore {
-    pub fn new() -> Self {
-        DataStore {
-            string: HashMap::<String, String>::new(),
-            list: HashMap::<String, RedisList>::new(),
+pub struct RedisEntry {
+    pub type_: RedisEntryType,
+    pub string: Option<String>,
+    pub list: Option<LinkedList<String>>,
+}
+
+impl RedisEntry {
+    pub fn create_string(value: &String) -> Self {
+        RedisEntry {
+            type_: RedisEntryType::String,
+            string: Some(value.clone()),
+            list: None,
         }
     }
 
-    pub fn get_string_store(&mut self) -> &mut HashMap<String, String> {
-        &mut self.string
-    }
-
-    pub fn get_list_store(&mut self) -> &mut HashMap<String, RedisList> {
-        &mut self.list
-    }
-}
-
-pub struct RedisList {
-    length: usize,
-    items: LinkedList<String>,
-}
-
-impl RedisList {
-    pub fn new() -> Self {
-        RedisList {
-            length: 0,
-            items: LinkedList::<String>::new(),
+    pub fn init_list() -> Self {
+        RedisEntry {
+            type_: RedisEntryType::String,
+            string: None,
+            list: Some(LinkedList::<String>::new()),
         }
     }
+}
+
+pub fn get_data_store() -> DataStore {
+    DataStore::new()
 }
 
 #[cfg(test)]
 mod test {
-    use super::{DataStore, RedisList};
+    use super::{get_data_store, RedisEntry, RedisEntryType};
+    use std::collections::LinkedList;
 
     #[test]
     fn test_list_store() {
-        let mut ds = DataStore::new();
-        let s = ds.get_list_store();
-        s.insert("foo".to_string(), RedisList::new());
+        let mut ds = get_data_store();
+        let s = RedisEntry {
+            type_: RedisEntryType::List,
+            list: Some(LinkedList::<String>::new()),
+            string: None,
+        };
+        ds.insert("foo".to_string(), s);
 
-        let v = s.get_mut(&"foo".to_string()).unwrap();
-        v.items.push_back("aaa".to_string());
-        v.items.push_front("bbb".to_string());
-        v.length += 2;
+        let v = ds.get_mut(&"foo".to_string()).unwrap();
+        v.list.as_mut().unwrap().push_back("aaa".to_string());
+        v.list.as_mut().unwrap().push_front("bbb".to_string());
 
-        let v = s.get(&"foo".to_string()).unwrap();
-        assert_eq!(v.length, 2);
-        assert_eq!(v.items.back().unwrap(), &"aaa".to_string());
+        let v = ds.get(&"foo".to_string()).unwrap();
+        assert_eq!(v.list.as_ref().unwrap().len(), 2);
+        assert_eq!(v.list.as_ref().unwrap().back().unwrap(), &"aaa".to_string());
     }
 }

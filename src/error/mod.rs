@@ -17,6 +17,12 @@ pub enum RequestError {
 }
 
 #[derive(Error, Debug)]
+pub enum ExecutionError {
+    #[error("WRONGTYPE Operation against a key holding the wrong kind of value")]
+    IncorrectType,
+}
+
+#[derive(Error, Debug)]
 pub enum IncrCommandError {
     #[error("value is not an integer or out of range")]
     InvalidValue,

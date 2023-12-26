@@ -1,5 +1,5 @@
 use crate::command::Command;
-use crate::data_store::DataStore;
+use crate::data_store::{DataStore, RedisEntry};
 use crate::error::RequestError;
 use crate::execution_result::{ExecutionResult, SetResult};
 
@@ -30,9 +30,7 @@ impl Command for SetCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        data_store
-            .get_string_store()
-            .insert(self.key.clone(), self.value.clone());
+        data_store.insert(self.key.clone(), RedisEntry::create_string(&self.value));
         Ok(Box::new(SetResult {}))
     }
 }
@@ -82,10 +80,10 @@ mod test {
     fn should_insert_value() {
         let cmd = SetCommand::new(vec!["foo".to_string(), "bar".to_string()]).unwrap();
         let mut ds = DataStore::new();
-        assert!(ds.get_string_store().get(&"foo".to_string()).is_none());
+        assert!(ds.get(&"foo".to_string()).is_none());
         cmd.execute(&mut ds).unwrap();
         assert_eq!(
-            ds.get_string_store().get(&"foo".to_string()).unwrap(),
+            ds.get(&"foo".to_string()).unwrap().string.as_ref().unwrap(),
             &"bar".to_string()
         );
     }

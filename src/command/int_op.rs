@@ -1,8 +1,7 @@
 use crate::command::Command;
-use crate::data_store::DataStore;
+use crate::data_store::{DataStore, RedisEntry};
 use crate::error::{IncrCommandError, RequestError};
 use crate::execution_result::{ExecutionResult, IntOpResult};
-use std::collections::HashMap;
 
 pub enum OpMultiplier {
     INCR = 1,
@@ -19,17 +18,15 @@ impl IntOp {
         Self { value: *value }
     }
 
-    pub fn execute(
-        &self,
-        key: &String,
-        data_store: &mut HashMap<String, String>,
-    ) -> Result<i64, ()> {
-        let default = "0".to_string();
-        let curr_value = data_store.get(key).unwrap_or(&default);
-        match curr_value.parse::<i64>() {
+    pub fn execute(&self, key: &String, data_store: &mut DataStore) -> Result<i64, ()> {
+        if !data_store.contains_key(key) {
+            data_store.insert(key.clone(), RedisEntry::create_string(&"0".to_string()));
+        }
+        let curr_value = data_store.get_mut(key).unwrap();
+        match curr_value.string.as_ref().unwrap().parse::<i64>() {
             Ok(v) => match v.checked_add(self.value) {
                 Some(updated) => {
-                    data_store.insert(key.clone(), updated.to_string());
+                    curr_value.string = Some(updated.to_string());
                     Ok(updated)
                 }
                 None => Err(()),
@@ -44,8 +41,7 @@ fn _execute(
     key: &String,
     data_store: &mut DataStore,
 ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-    let string_store = data_store.get_string_store();
-    match op.execute(key, string_store) {
+    match op.execute(key, data_store) {
         Ok(v) => Ok(Box::new(IntOpResult { value: v })),
         Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
     }
@@ -121,7 +117,7 @@ impl Command for IncrbyCommand {
 mod test {
     mod test_incr {
         use crate::command::{int_op::OpMultiplier, Command};
-        use crate::data_store::DataStore;
+        use crate::data_store::{DataStore, RedisEntry};
 
         use super::super::IncrCommand;
         use crate::error::IncrCommandError;
@@ -153,10 +149,10 @@ mod test {
         fn should_insert_value_when_key_is_not_set() {
             let cmd = IncrCommand::new(vec!["foo".to_string()], OpMultiplier::INCR).unwrap();
             let mut ds = DataStore::new();
-            assert!(ds.get_string_store().get(&"foo".to_string()).is_none());
+            assert!(ds.get(&"foo".to_string()).is_none());
             cmd.execute(&mut ds).unwrap();
             assert_eq!(
-                ds.get_string_store().get(&"foo".to_string()).unwrap(),
+                ds.get(&"foo".to_string()).unwrap().string.as_ref().unwrap(),
                 &"1".to_string()
             );
         }
@@ -165,8 +161,10 @@ mod test {
         fn should_throw_error_when_value_is_not_int() {
             let cmd = IncrCommand::new(vec!["foo".to_string()], OpMultiplier::INCR).unwrap();
             let mut ds = DataStore::new();
-            ds.get_string_store()
-                .insert("foo".to_string(), "bar".to_string());
+            ds.insert(
+                "foo".to_string(),
+                RedisEntry::create_string(&"bar".to_string()),
+            );
             assert!(cmd.execute(&mut ds).is_err());
         }
 
@@ -174,8 +172,10 @@ mod test {
         fn should_throw_error_when_value_overflows_incr() {
             let cmd = IncrCommand::new(vec!["foo".to_string()], OpMultiplier::INCR).unwrap();
             let mut ds = DataStore::new();
-            ds.get_string_store()
-                .insert("foo".to_string(), i64::MAX.to_string());
+            ds.insert(
+                "foo".to_string(),
+                RedisEntry::create_string(&i64::MAX.to_string()),
+            );
             match cmd.execute(&mut ds) {
                 Ok(_) => panic!("should not be ok"),
                 Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
@@ -186,8 +186,10 @@ mod test {
         fn should_throw_error_when_value_overflows_decr() {
             let cmd = IncrCommand::new(vec!["foo".to_string()], OpMultiplier::DECR).unwrap();
             let mut ds = DataStore::new();
-            ds.get_string_store()
-                .insert("foo".to_string(), i64::MIN.to_string());
+            ds.insert(
+                "foo".to_string(),
+                RedisEntry::create_string(&i64::MIN.to_string()),
+            );
             match cmd.execute(&mut ds) {
                 Ok(_) => panic!("should not be ok"),
                 Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
@@ -197,7 +199,7 @@ mod test {
     mod test_incrby {
         use super::super::IncrbyCommand;
         use crate::command::Command;
-        use crate::data_store::DataStore;
+        use crate::data_store::{DataStore, RedisEntry};
         use crate::error::RequestError;
         use crate::{command::int_op::OpMultiplier, error::IncrCommandError};
 
@@ -238,8 +240,10 @@ mod test {
                 IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], OpMultiplier::INCR)
                     .unwrap();
             let mut ds = DataStore::new();
-            ds.get_string_store()
-                .insert("foo".to_string(), i64::MAX.to_string());
+            ds.insert(
+                "foo".to_string(),
+                RedisEntry::create_string(&i64::MAX.to_string()),
+            );
             match cmd.execute(&mut ds) {
                 Ok(_) => panic!("should not be ok"),
                 Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
@@ -252,8 +256,10 @@ mod test {
                 IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], OpMultiplier::DECR)
                     .unwrap();
             let mut ds = DataStore::new();
-            ds.get_string_store()
-                .insert("foo".to_string(), i64::MIN.to_string());
+            ds.insert(
+                "foo".to_string(),
+                RedisEntry::create_string(&i64::MIN.to_string()),
+            );
             match cmd.execute(&mut ds) {
                 Ok(_) => panic!("should not be ok"),
                 Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),

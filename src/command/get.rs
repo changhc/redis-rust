@@ -1,6 +1,6 @@
 use crate::command::Command;
 use crate::data_store::DataStore;
-use crate::error::RequestError;
+use crate::error::{ExecutionError, RequestError};
 use crate::execution_result::{ExecutionResult, GetResult};
 
 #[derive(Debug)]
@@ -28,10 +28,13 @@ impl Command for GetCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        let value = data_store.get_string_store().get(&self.key);
+        let value = data_store.get(&self.key);
         Ok(Box::new(GetResult {
             value: match value {
-                Some(v) => Some(v.clone()),
+                Some(entry) => match &entry.string {
+                    Some(v) => Some(v.clone()),
+                    None => return Err(Box::new(ExecutionError::IncorrectType)),
+                },
                 None => None,
             },
         }))
@@ -40,7 +43,7 @@ impl Command for GetCommand {
 
 #[cfg(test)]
 mod test {
-    use crate::data_store::DataStore;
+    use crate::data_store::{DataStore, RedisEntry};
 
     use crate::command::Command;
 
@@ -70,8 +73,10 @@ mod test {
     fn should_get_value_if_key_exists() {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = DataStore::new();
-        ds.get_string_store()
-            .insert("foo".to_string(), "bar".to_string());
+        ds.insert(
+            "foo".to_string(),
+            RedisEntry::create_string(&"bar".to_string()),
+        );
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "bar".to_string());
     }
