@@ -8,7 +8,7 @@ use ping::PingCommand;
 mod set;
 use set::SetCommand;
 mod int_op;
-use int_op::{IncrCommand, IncrbyCommand, OpMultiplier};
+use int_op::{IncrCommand, IncrbyCommand, NumOperator};
 mod types;
 use std::str::FromStr;
 use types::CommandType;
@@ -34,19 +34,19 @@ impl CommandFactory {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::INCR => match IncrCommand::new(body, OpMultiplier::INCR) {
+                CommandType::INCR => match IncrCommand::new(body, NumOperator::INCR) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::DECR => match IncrCommand::new(body, OpMultiplier::DECR) {
+                CommandType::DECR => match IncrCommand::new(body, NumOperator::DECR) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::INCRBY => match IncrbyCommand::new(body, OpMultiplier::INCR) {
+                CommandType::INCRBY => match IncrbyCommand::new(body, NumOperator::INCR) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::DECRBY => match IncrbyCommand::new(body, OpMultiplier::DECR) {
+                CommandType::DECRBY => match IncrbyCommand::new(body, NumOperator::DECR) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
