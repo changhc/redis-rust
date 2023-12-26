@@ -1,11 +1,42 @@
 use crate::command::Command;
 use crate::error::{IncrCommandError, RequestError};
-use crate::execution_result::{ExecutionResult, IncrResult};
+use crate::execution_result::{ExecutionResult, IntOpResult};
 use std::collections::HashMap;
+
+#[derive(Debug)]
+struct IntOp {
+    value: i64,
+}
+
+impl IntOp {
+    pub fn new(value: &i64) -> Self {
+        Self { value: *value }
+    }
+
+    pub fn execute(
+        &self,
+        key: &String,
+        data_store: &mut HashMap<String, String>,
+    ) -> Result<i64, ()> {
+        let default = "0".to_string();
+        let curr_value = data_store.get(key).unwrap_or(&default);
+        match curr_value.parse::<i64>() {
+            Ok(v) => match v.checked_add(self.value) {
+                Some(updated) => {
+                    data_store.insert(key.clone(), updated.to_string());
+                    Ok(updated)
+                }
+                None => Err(()),
+            },
+            Err(_) => Err(()),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct IncrCommand {
     key: String,
+    op: IntOp,
 }
 
 impl IncrCommand {
@@ -19,6 +50,7 @@ impl IncrCommand {
         }
         Ok(Box::new(IncrCommand {
             key: tokens[0].clone(),
+            op: IntOp::new(&1),
         }))
     }
 }
@@ -28,16 +60,8 @@ impl Command for IncrCommand {
         &self,
         data_store: &mut HashMap<String, String>,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        let default = "0".to_string();
-        let curr_value = data_store.get(&self.key).unwrap_or(&default);
-        match curr_value.parse::<i64>() {
-            Ok(v) => match v.checked_add(1) {
-                Some(updated) => {
-                    data_store.insert(self.key.clone(), updated.to_string());
-                    Ok(Box::new(IncrResult { value: updated }))
-                }
-                None => Err(Box::new(IncrCommandError::InvalidValue)),
-            },
+        match self.op.execute(&self.key, data_store) {
+            Ok(v) => Ok(Box::new(IntOpResult { value: v })),
             Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
         }
     }
@@ -53,7 +77,7 @@ mod test {
     use crate::error::IncrCommandError;
 
     #[test]
-    fn should_accept_exactly_two_tokens() {
+    fn should_accept_exactly_one_token() {
         match IncrCommand::new(vec!["foo".to_string(), "bar".to_string()]) {
             Ok(_) => panic!("should not be ok"),
             Err(e) => {

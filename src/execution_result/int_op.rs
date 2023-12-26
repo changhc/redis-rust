@@ -1,10 +1,10 @@
 use super::{ExecutionResult, ResultType};
 
-pub struct IncrResult {
+pub struct IntOpResult {
     pub value: i64,
 }
 
-impl ExecutionResult for IncrResult {
+impl ExecutionResult for IntOpResult {
     fn get_result_type(&self) -> super::ResultType {
         ResultType::Integer
     }
