@@ -1,5 +1,7 @@
 mod base;
 pub use base::ExecutionResult;
+mod error;
+pub use error::ErrorResult;
 mod ping;
 pub use ping::PingResult;
 mod set;
