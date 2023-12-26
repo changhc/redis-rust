@@ -7,6 +7,7 @@ pub enum CommandType {
     INCR,
     DECR,
     INCRBY,
+    DECRBY,
 }
 
 impl FromStr for CommandType {
@@ -20,6 +21,7 @@ impl FromStr for CommandType {
             "INCR" => Ok(CommandType::INCR),
             "DECR" => Ok(CommandType::DECR),
             "INCRBY" => Ok(CommandType::INCRBY),
+            "DECRBY" => Ok(CommandType::DECRBY),
             _ => Err(()),
         }
     }
