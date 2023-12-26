@@ -3,7 +3,7 @@ run-name: BUild
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
 
 jobs:
