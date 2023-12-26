@@ -109,9 +109,7 @@ impl Command for IncrbyCommand {
 mod test {
     mod test_incr {
         use std::collections::HashMap;
-
         use crate::command::{int_op::NumOperator, Command};
-
         use super::super::IncrCommand;
         use crate::error::IncrCommandError;
 
