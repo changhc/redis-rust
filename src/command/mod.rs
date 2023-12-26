@@ -8,7 +8,7 @@ use ping::PingCommand;
 mod set;
 use set::SetCommand;
 mod int_op;
-use int_op::IncrCommand;
+use int_op::{DecrCommand, IncrCommand};
 mod types;
 use std::str::FromStr;
 use types::CommandType;
@@ -38,12 +38,9 @@ impl CommandFactory {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
-                CommandType::INCR => match IncrCommand::new(body) {
-                    Ok(v) => Ok(Box::new(v)),
-                    Err(e) => Err(Box::new(RequestError::InvalidCommand(
-                        command,
-                        e.to_string(),
-                    ))),
+                CommandType::DECR => match DecrCommand::new(body) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
                 },
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),
