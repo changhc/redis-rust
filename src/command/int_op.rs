@@ -1,6 +1,6 @@
 use crate::command::Command;
-use crate::data_store::{DataStore, RedisEntry};
-use crate::error::{ExecutionError, IncrCommandError, RequestError};
+use crate::data_store::{DataStore, RedisEntry, RedisEntryType};
+use crate::error::{ExecutionError, IncrCommandError, InternalError, RequestError};
 use crate::execution_result::{ExecutionResult, IntOpResult};
 
 pub enum NumOperator {
@@ -17,18 +17,26 @@ fn _execute(
         data_store.insert(key.clone(), RedisEntry::create_string(&"0".to_string()));
     }
     let entry = data_store.get_mut(key).unwrap();
-    match &entry.string {
-        Some(curr_value) => match curr_value.parse::<i64>() {
-            Ok(v) => match v.checked_add(value) {
-                Some(updated) => {
-                    entry.string = Some(updated.to_string());
-                    Ok(Box::new(IntOpResult { value: updated }))
+    match entry.type_ {
+        RedisEntryType::String => {
+            match &entry.string {
+                Some(curr_value) => match curr_value.parse::<i64>() {
+                    Ok(v) => match v.checked_add(value) {
+                        Some(updated) => {
+                            entry.string = Some(updated.to_string());
+                            Ok(Box::new(IntOpResult { value: updated }))
+                        }
+                        None => Err(Box::new(IncrCommandError::InvalidValue)),
+                    },
+                    Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
+                },
+                None => {
+                    log::error!("Integration error at key '{}': expecting type 'String' but data is not found", key);
+                    Err(Box::new(InternalError::Error))
                 }
-                None => Err(Box::new(IncrCommandError::InvalidValue)),
-            },
-            Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
-        },
-        None => Err(Box::new(ExecutionError::IncorrectType)),
+            }
+        }
+        _ => Err(Box::new(ExecutionError::IncorrectType)),
     }
 }
 

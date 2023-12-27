@@ -25,6 +25,12 @@ pub enum ExecutionError {
 }
 
 #[derive(Error, Debug)]
+pub enum InternalError {
+    #[error("INTERNAL Internal error")]
+    Error,
+}
+
+#[derive(Error, Debug)]
 pub enum IncrCommandError {
     #[error("value is not an integer or out of range")]
     InvalidValue,

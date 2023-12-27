@@ -1,6 +1,6 @@
 use crate::command::Command;
-use crate::data_store::DataStore;
-use crate::error::{ExecutionError, RequestError};
+use crate::data_store::{DataStore, RedisEntryType};
+use crate::error::{ExecutionError, RequestError, InternalError};
 use crate::execution_result::{ExecutionResult, GetResult};
 
 #[derive(Debug)]
@@ -27,10 +27,16 @@ impl Command for GetCommand {
         let value = data_store.get(&self.key);
         Ok(Box::new(GetResult {
             value: match value {
-                Some(entry) => match &entry.string {
-                    Some(v) => Some(v.clone()),
-                    None => return Err(Box::new(ExecutionError::IncorrectType)),
-                },
+                Some(entry) => match entry.type_ {
+                    RedisEntryType::String => match &entry.string {
+                        Some(v) => Some(v.clone()),
+                        None => {
+                            log::error!("Integration error at key '{}': expecting type 'String' but data is not found", &self.key);
+                            return Err(Box::new(InternalError::Error));
+                        }
+                    },
+                    _ => return Err(Box::new(ExecutionError::IncorrectType)),
+                }
                 None => None,
             },
         }))
