@@ -36,11 +36,7 @@ pub struct IncrCommand {
 impl IncrCommand {
     pub fn new(tokens: Vec<String>, op: NumOperator) -> Result<Box<Self>, RequestError> {
         if tokens.len() != 1 {
-            return Err(RequestError::InvalidCommandBody(format!(
-                "Expected number of tokens: {}, received: {}",
-                1,
-                tokens.len()
-            )));
+            return Err(RequestError::IncorrectArgCount);
         }
         Ok(Box::new(IncrCommand {
             key: tokens[0].clone(),
@@ -70,11 +66,7 @@ pub struct IncrbyCommand {
 impl IncrbyCommand {
     pub fn new(tokens: Vec<String>, op: NumOperator) -> Result<Box<Self>, RequestError> {
         if tokens.len() != 2 {
-            return Err(RequestError::InvalidCommandBody(format!(
-                "Expected number of tokens: {}, received: {}",
-                2,
-                tokens.len()
-            )));
+            return Err(RequestError::IncorrectArgCount);
         }
 
         match tokens[1].parse::<i64>() {
@@ -123,8 +115,7 @@ mod test {
                 Err(e) => {
                     assert_eq!(
                         e.to_string(),
-                        "invalid command body. Details: Expected number of tokens: 1, received: 2"
-                            .to_string()
+                        "ERR wrong number of arguments for command".to_string()
                     );
                 }
             }
@@ -198,8 +189,7 @@ mod test {
                 Err(e) => {
                     assert_eq!(
                         e.to_string(),
-                        "invalid command body. Details: Expected number of tokens: 2, received: 1"
-                            .to_string()
+                        "ERR wrong number of arguments for command".to_string()
                     );
                 }
             }
