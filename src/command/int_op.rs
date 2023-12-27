@@ -1,6 +1,6 @@
 use crate::command::Command;
 use crate::data_store::{DataStore, RedisEntry};
-use crate::error::{IncrCommandError, RequestError, ExecutionError};
+use crate::error::{ExecutionError, IncrCommandError, RequestError};
 use crate::execution_result::{ExecutionResult, IntOpResult};
 
 pub enum NumOperator {
@@ -19,16 +19,16 @@ fn _execute(
     let entry = data_store.get_mut(key).unwrap();
     match &entry.string {
         Some(curr_value) => match curr_value.parse::<i64>() {
-                Ok(v) => match v.checked_add(value) {
-                    Some(updated) => {
-                        entry.string = Some(updated.to_string());
-                        Ok(Box::new(IntOpResult { value: updated }))
-                    }
-                    None => Err(Box::new(IncrCommandError::InvalidValue)),
-                },
-                Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
+            Ok(v) => match v.checked_add(value) {
+                Some(updated) => {
+                    entry.string = Some(updated.to_string());
+                    Ok(Box::new(IntOpResult { value: updated }))
+                }
+                None => Err(Box::new(IncrCommandError::InvalidValue)),
             },
-        None => Err(Box::new(ExecutionError::IncorrectType))
+            Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
+        },
+        None => Err(Box::new(ExecutionError::IncorrectType)),
     }
 }
 
