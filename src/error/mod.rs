@@ -12,6 +12,8 @@ pub enum RequestError {
     InvalidCommandBody(String),
     #[error("value is not an integer or out of range")]
     InvalidIntValue,
+    #[error("ERR wrong number of arguments for command")]
+    IncorrectArgCount,
     #[error("unknown request error")]
     Unknown,
 }

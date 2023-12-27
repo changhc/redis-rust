@@ -11,11 +11,7 @@ pub struct GetCommand {
 impl GetCommand {
     pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
         if tokens.len() != 1 {
-            return Err(RequestError::InvalidCommandBody(format!(
-                "Expected number of tokens: {}, received: {}",
-                1,
-                tokens.len()
-            )));
+            return Err(RequestError::IncorrectArgCount);
         }
         Ok(Box::new(GetCommand {
             key: tokens[0].clone(),
@@ -62,8 +58,7 @@ mod test {
             Err(e) => {
                 assert_eq!(
                     e.to_string(),
-                    "invalid command body. Details: Expected number of tokens: 1, received: 2"
-                        .to_string()
+                    "ERR wrong number of arguments for command".to_string()
                 );
             }
         }
