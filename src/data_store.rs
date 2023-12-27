@@ -24,7 +24,7 @@ impl RedisEntry {
 
     pub fn init_list() -> Self {
         RedisEntry {
-            type_: RedisEntryType::String,
+            type_: RedisEntryType::List,
             string: None,
             list: Some(LinkedList::<String>::new()),
         }
