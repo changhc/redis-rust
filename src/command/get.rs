@@ -1,6 +1,6 @@
 use crate::command::Command;
-use crate::data_store::{DataStore, RedisEntryType};
-use crate::error::{ExecutionError, RequestError, InternalError};
+use crate::data_store::DataStore;
+use crate::error::RequestError;
 use crate::execution_result::{ExecutionResult, GetResult};
 
 #[derive(Debug)]
@@ -24,28 +24,16 @@ impl Command for GetCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        let value = data_store.get(&self.key);
-        Ok(Box::new(GetResult {
-            value: match value {
-                Some(entry) => match entry.type_ {
-                    RedisEntryType::String => match &entry.string {
-                        Some(v) => Some(v.clone()),
-                        None => {
-                            log::error!("Integration error at key '{}': expecting type 'String' but data is not found", &self.key);
-                            return Err(Box::new(InternalError::Error));
-                        }
-                    },
-                    _ => return Err(Box::new(ExecutionError::IncorrectType)),
-                }
-                None => None,
-            },
-        }))
+        match data_store.get_string(&self.key) {
+            Ok(v) => Ok(Box::new(GetResult { value: v.cloned() })),
+            Err(e) => Err(e),
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::data_store::{DataStore, RedisEntry};
+    use crate::data_store::DataStore;
 
     use crate::command::Command;
 
@@ -74,10 +62,7 @@ mod test {
     fn should_get_value_if_key_exists() {
         let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
         let mut ds = DataStore::new();
-        ds.insert(
-            "foo".to_string(),
-            RedisEntry::create_string(&"bar".to_string()),
-        );
+        ds.set_string_overwrite(&"foo".to_string(), &"bar".to_string());
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "bar".to_string());
     }
