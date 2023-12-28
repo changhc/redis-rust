@@ -67,15 +67,11 @@ impl DataStore {
         }
     }
 
-    pub fn insert_list(
-        &mut self,
-        key: &String,
-        first_element: &String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn insert_list(&mut self, key: &String) -> Result<(), Box<dyn std::error::Error>> {
         match self.ds.get(key) {
             Some(_) => Err(Box::new(InternalError::KeyError)),
             None => {
-                let s = RedisEntry::init_list(first_element);
+                let s = RedisEntry::init_list();
                 self.ds.insert(key.clone(), s);
                 Ok(())
             }
@@ -119,11 +115,11 @@ impl RedisEntry {
         }
     }
 
-    pub fn init_list(first_element: &String) -> Self {
+    pub fn init_list() -> Self {
         RedisEntry {
             type_: RedisEntryType::List,
             string: None,
-            list: Some(LinkedList::from([first_element.clone()])),
+            list: Some(LinkedList::new()),
         }
     }
 }
@@ -140,9 +136,10 @@ mod test {
     fn test_list_store() {
         let mut ds = get_data_store();
         let key = "foo".to_string();
-        let _ = ds.insert_list(&key, &"aaa".to_string());
+        let _ = ds.insert_list(&key);
 
         let v = ds.get_list_mut(&key).unwrap().unwrap();
+        v.push_front("aaa".to_string());
         v.push_front("bbb".to_string());
 
         let v = ds.ds.get(&"foo".to_string()).unwrap();
