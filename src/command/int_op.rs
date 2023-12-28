@@ -114,24 +114,18 @@ mod test {
 
         #[test]
         fn should_accept_exactly_one_token() {
-            match IncrCommand::new(
+            let err = IncrCommand::new(
                 vec!["foo".to_string(), "bar".to_string()],
                 NumOperator::INCR,
-            ) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => {
-                    assert_eq!(
-                        e.to_string(),
-                        "ERR wrong number of arguments for command".to_string()
-                    );
-                }
-            }
-            match IncrCommand::new(vec!["foo".to_string()], NumOperator::INCR) {
-                Ok(v) => {
-                    assert_eq!(v.key, "foo".to_string());
-                }
-                Err(_) => panic!("should be ok"),
-            }
+            )
+            .err()
+            .unwrap();
+            assert_eq!(
+                err.to_string(),
+                "ERR wrong number of arguments for command".to_string()
+            );
+            let v = IncrCommand::new(vec!["foo".to_string()], NumOperator::INCR).unwrap();
+            assert_eq!(v.key, "foo".to_string());
         }
 
         #[test]
@@ -169,10 +163,8 @@ mod test {
             let cmd = IncrCommand::new(vec![key.clone()], NumOperator::INCR).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MAX.to_string());
-            match cmd.execute(&mut ds) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
-            }
+            let err = cmd.execute(&mut ds).err().unwrap();
+            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
         }
 
         #[test]
@@ -181,10 +173,8 @@ mod test {
             let cmd = IncrCommand::new(vec![key.clone()], NumOperator::DECR).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MIN.to_string());
-            match cmd.execute(&mut ds) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
-            }
+            let err = cmd.execute(&mut ds).err().unwrap();
+            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
         }
     }
     mod test_incrby {
@@ -196,32 +186,29 @@ mod test {
 
         #[test]
         fn should_accept_exactly_two_tokens() {
-            match IncrbyCommand::new(vec!["foo".to_string()], NumOperator::INCR) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => {
-                    assert_eq!(
-                        e.to_string(),
-                        "ERR wrong number of arguments for command".to_string()
-                    );
-                }
-            }
-            match IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], NumOperator::INCR) {
-                Ok(v) => {
-                    assert_eq!(v.key, "foo".to_string());
-                }
-                Err(_) => panic!("should be ok"),
-            }
+            let err = IncrbyCommand::new(vec!["foo".to_string()], NumOperator::INCR)
+                .err()
+                .unwrap();
+            assert_eq!(
+                err.to_string(),
+                "ERR wrong number of arguments for command".to_string()
+            );
+
+            let v = IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], NumOperator::INCR)
+                .unwrap();
+            assert_eq!(v.key, "foo".to_string());
+            assert_eq!(v.value, 5);
         }
 
         #[test]
         fn should_reject_non_int_increment() {
-            match IncrbyCommand::new(
+            let err = IncrbyCommand::new(
                 vec!["foo".to_string(), "bar".to_string()],
                 NumOperator::INCR,
-            ) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => assert_eq!(e.to_string(), RequestError::InvalidIntValue.to_string()),
-            }
+            )
+            .err()
+            .unwrap();
+            assert_eq!(err.to_string(), RequestError::InvalidIntValue.to_string());
         }
 
         #[test]
@@ -231,10 +218,8 @@ mod test {
                 IncrbyCommand::new(vec![key.clone(), "5".to_string()], NumOperator::INCR).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MAX.to_string());
-            match cmd.execute(&mut ds) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
-            }
+            let err = cmd.execute(&mut ds).err().unwrap();
+            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
         }
 
         #[test]
@@ -244,10 +229,8 @@ mod test {
                 IncrbyCommand::new(vec![key.clone(), "5".to_string()], NumOperator::DECR).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MIN.to_string());
-            match cmd.execute(&mut ds) {
-                Ok(_) => panic!("should not be ok"),
-                Err(e) => assert_eq!(e.to_string(), IncrCommandError::InvalidValue.to_string()),
-            }
+            let err = cmd.execute(&mut ds).err().unwrap();
+            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
         }
     }
 }

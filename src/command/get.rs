@@ -41,21 +41,15 @@ mod test {
 
     #[test]
     fn should_accept_exactly_one_token() {
-        match GetCommand::new(vec!["foo".to_string()]) {
-            Ok(v) => {
-                assert_eq!(v.key, "foo".to_string());
-            }
-            Err(_) => panic!("should be ok"),
-        }
-        match GetCommand::new(vec!["foo".to_string(), "bar".to_string()]) {
-            Ok(_) => panic!("should not be ok"),
-            Err(e) => {
-                assert_eq!(
-                    e.to_string(),
-                    "ERR wrong number of arguments for command".to_string()
-                );
-            }
-        }
+        let v = GetCommand::new(vec!["foo".to_string()]).unwrap();
+        assert_eq!(v.key, "foo".to_string());
+        let err = GetCommand::new(vec!["foo".to_string(), "bar".to_string()])
+            .err()
+            .unwrap();
+        assert_eq!(
+            err.to_string(),
+            "ERR wrong number of arguments for command".to_string()
+        );
     }
 
     #[test]
