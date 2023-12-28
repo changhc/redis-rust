@@ -1,7 +1,7 @@
 use crate::command::Command;
+use crate::data_store::DataStore;
 use crate::error::RequestError;
 use crate::execution_result::{ExecutionResult, PingResult};
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct PingCommand;
@@ -18,7 +18,7 @@ impl PingCommand {
 impl Command for PingCommand {
     fn execute(
         &self,
-        _: &mut HashMap<String, String>,
+        _: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
         Ok(Box::new(PingResult {}))
     }
