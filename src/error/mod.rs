@@ -28,6 +28,8 @@ pub enum ExecutionError {
 pub enum InternalError {
     #[error("INTERNAL Internal error")]
     Error,
+    #[error("INTERNAL Key already exists")]
+    KeyError,
 }
 
 #[derive(Error, Debug)]

@@ -13,6 +13,9 @@ mod types;
 use std::str::FromStr;
 use types::CommandType;
 
+mod list;
+use list::LpushCommand;
+
 #[derive(Debug)]
 pub struct CommandFactory;
 
@@ -47,6 +50,10 @@ impl CommandFactory {
                     Err(e) => Err(e),
                 },
                 CommandType::DECRBY => match IncrbyCommand::new(body, NumOperator::DECR) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
+                },
+                CommandType::LPUSH => match LpushCommand::new(body) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },
