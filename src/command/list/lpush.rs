@@ -80,11 +80,13 @@ mod test {
 
     #[test]
     fn should_push_item_if_key_does_not_exist() {
-        let cmd = LpushCommand::new(vec!["foo".to_string(), "bar".to_string()]).unwrap();
+        let key = "foo".to_string();
+        let cmd = LpushCommand::new(vec![key.clone(), "bar".to_string(), "baz".to_string()]).unwrap();
         let mut ds = DataStore::new();
         let result = cmd.execute(&mut ds);
-        assert_eq!(result.unwrap().to_string(), "1".to_string());
-        let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "2".to_string());
+        let list = ds.get_list_mut(&key).unwrap().unwrap();
+        assert_eq!(*list.front().unwrap(), "baz".to_string());
+        assert_eq!(*list.back().unwrap(), "bar".to_string());
     }
 }
