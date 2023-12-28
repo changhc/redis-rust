@@ -78,6 +78,10 @@ impl DataStore {
         }
     }
 
+    pub fn drop_key(&mut self, key: &String) {
+        self.ds.remove(key);
+    }
+
     fn throw_integration_error(
         key: &String,
         expected_type: RedisEntryType,
