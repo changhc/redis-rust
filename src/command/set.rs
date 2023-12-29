@@ -39,35 +39,25 @@ mod test {
 
     #[test]
     fn should_accept_exactly_two_tokens() {
-        match SetCommand::new(vec!["foo".to_string()]) {
-            Ok(_) => panic!("should not be ok"),
-            Err(e) => {
-                assert_eq!(
-                    e.to_string(),
-                    "ERR wrong number of arguments for command".to_string()
-                );
-            }
-        }
-        match SetCommand::new(vec![
+        let err = SetCommand::new(vec!["foo".to_string()]).err().unwrap();
+        assert_eq!(
+            err.to_string(),
+            "ERR wrong number of arguments for command".to_string()
+        );
+        let err = SetCommand::new(vec![
             "foo".to_string(),
             "bar".to_string(),
             "baz".to_string(),
-        ]) {
-            Ok(_) => panic!("should not be ok"),
-            Err(e) => {
-                assert_eq!(
-                    e.to_string(),
-                    "ERR wrong number of arguments for command".to_string()
-                );
-            }
-        }
-        match SetCommand::new(vec!["foo".to_string(), "bar".to_string()]) {
-            Ok(v) => {
-                assert_eq!(v.key, "foo".to_string());
-                assert_eq!(v.value, "bar".to_string());
-            }
-            Err(_) => panic!("should be ok"),
-        }
+        ])
+        .err()
+        .unwrap();
+        assert_eq!(
+            err.to_string(),
+            "ERR wrong number of arguments for command".to_string()
+        );
+        let v = SetCommand::new(vec!["foo".to_string(), "bar".to_string()]).unwrap();
+        assert_eq!(v.key, "foo".to_string());
+        assert_eq!(v.value, "bar".to_string());
     }
 
     #[test]
