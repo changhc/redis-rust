@@ -5,6 +5,8 @@ pub enum ResultType {
     SimpleError,
     Null,
     Integer,
+    Array,
+    BulkString,
 }
 
 impl Display for ResultType {
@@ -14,6 +16,8 @@ impl Display for ResultType {
             ResultType::SimpleError => "-",
             ResultType::Null => "_",
             ResultType::Integer => ":",
+            ResultType::Array => "*",
+            ResultType::BulkString => "$",
         };
         write!(f, "{}", s)
     }

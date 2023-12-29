@@ -12,5 +12,7 @@ mod int_op;
 pub use int_op::IntOpResult;
 mod types;
 pub use types::ResultType;
+mod bulk_string;
+pub use bulk_string::BulkStringResult;
 
 pub mod list;
