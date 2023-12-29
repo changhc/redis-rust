@@ -1,7 +1,7 @@
 use crate::command::Command;
 use crate::data_store::DataStore;
 use crate::error::{IncrCommandError, RequestError};
-use crate::execution_result::{ExecutionResult, IntOpResult};
+use crate::execution_result::{string::IntOpResult, ExecutionResult};
 
 pub enum NumOperator {
     INCR,
@@ -106,7 +106,8 @@ impl Command for IncrbyCommand {
 #[cfg(test)]
 mod test {
     mod test_incr {
-        use crate::command::{int_op::NumOperator, Command};
+        use crate::command::string::NumOperator;
+        use crate::command::Command;
         use crate::data_store::DataStore;
 
         use super::super::IncrCommand;
@@ -182,7 +183,7 @@ mod test {
         use crate::command::Command;
         use crate::data_store::DataStore;
         use crate::error::RequestError;
-        use crate::{command::int_op::NumOperator, error::IncrCommandError};
+        use crate::{command::string::NumOperator, error::IncrCommandError};
 
         #[test]
         fn should_accept_exactly_two_tokens() {

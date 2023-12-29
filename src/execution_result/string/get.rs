@@ -1,11 +1,11 @@
-use super::{ExecutionResult, ResultType};
+use crate::execution_result::{ExecutionResult, ResultType};
 
 pub struct GetResult {
     pub value: Option<String>,
 }
 
 impl ExecutionResult for GetResult {
-    fn get_result_type(&self) -> super::ResultType {
+    fn get_result_type(&self) -> ResultType {
         match self.value {
             Some(_) => ResultType::SimpleString,
             None => ResultType::Null,

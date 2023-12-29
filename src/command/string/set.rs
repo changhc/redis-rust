@@ -1,7 +1,7 @@
 use crate::command::Command;
 use crate::data_store::DataStore;
 use crate::error::RequestError;
-use crate::execution_result::{ExecutionResult, SetResult};
+use crate::execution_result::{string::SetResult, ExecutionResult};
 
 #[derive(Debug)]
 pub struct SetCommand {
