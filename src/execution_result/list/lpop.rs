@@ -1,4 +1,4 @@
-use crate::execution_result::{ExecutionResult, ResultType};
+use crate::execution_result::{BulkStringResult, ExecutionResult, ResultType};
 
 pub struct LpopResult {
     pub values: Vec<String>,
@@ -16,7 +16,15 @@ impl ExecutionResult for LpopResult {
         match self.values.len() {
             0 => "".to_string(),
             1 => self.values[0].clone(),
-            _ => format!("{}\r\n{}", self.values.len(), self.values.join("\r\n")),
+            _ => format!(
+                "{}\r\n{}",
+                self.values.len(),
+                self.values
+                    .iter()
+                    .map(|v| BulkStringResult { value: v.clone() }.serialise())
+                    .collect::<Vec<_>>()
+                    .join("")
+            ),
         }
     }
 }

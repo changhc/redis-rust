@@ -131,6 +131,7 @@ mod test {
                 .unwrap()
                 .to_string()
                 .split("\r\n")
+                .filter(|v| !v.starts_with("$") && v.len() > 0)
                 .collect::<Vec<_>>()[1..],
             vec!["v3".to_string(), "v2".to_string(), "v1".to_string()]
         );
