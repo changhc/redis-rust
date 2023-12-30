@@ -55,6 +55,7 @@ impl Command for MsetCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
+        // TODO: atomicity
         for p in &self.pairs {
             data_store.set_string_overwrite(&p.0, &p.1);
         }
