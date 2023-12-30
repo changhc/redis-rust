@@ -126,15 +126,7 @@ mod test {
         let result = LpopCommand::new(vec![key.clone(), "3".to_string()])
             .unwrap()
             .execute(&mut ds);
-        assert_eq!(
-            result
-                .unwrap()
-                .to_string()
-                .split("\r\n")
-                .filter(|v| !v.starts_with("$") && v.len() > 0)
-                .collect::<Vec<_>>()[1..],
-            vec!["v3".to_string(), "v2".to_string(), "v1".to_string()]
-        );
+        assert_eq!(result.unwrap().to_string(), "v3,v2,v1");
         let list = ds.get_list_mut(&key).unwrap().unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(*list.back().unwrap(), "v0".to_string());

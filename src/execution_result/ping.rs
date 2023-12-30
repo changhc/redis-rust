@@ -1,11 +1,11 @@
 pub struct PingResult;
-use super::{ExecutionResult, ResultType};
+use crate::execution_result::{to_simple_string, ExecutionResult};
 
 impl ExecutionResult for PingResult {
-    fn get_result_type(&self) -> super::ResultType {
-        ResultType::SimpleString
-    }
     fn to_string(&self) -> String {
-        "PONG".to_string()
+        "OK".to_string()
+    }
+    fn serialise(&self) -> String {
+        to_simple_string(&self.to_string())
     }
 }
