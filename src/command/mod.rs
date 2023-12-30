@@ -72,6 +72,10 @@ fn handle_string_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        StringCommandType::MSET => match string::MsetCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
 
