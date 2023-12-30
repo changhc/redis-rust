@@ -13,6 +13,7 @@ pub enum ListCommandType {
     LPUSH,
     LPOP,
     LRANGE,
+    LLEN,
 }
 
 pub enum CommandType {
@@ -22,7 +23,7 @@ pub enum CommandType {
 }
 
 const STRING_COMMANDS: &[&str] = &["SET", "GET", "INCR", "DECR", "INCRBY", "DECRBY"];
-const LIST_COMMANDS: &[&str] = &["LPUSH", "LPOP", "LRANGE"];
+const LIST_COMMANDS: &[&str] = &["LPUSH", "LPOP", "LRANGE", "LLEN"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -63,6 +64,7 @@ impl FromStr for ListCommandType {
             "LPUSH" => Ok(ListCommandType::LPUSH),
             "LPOP" => Ok(ListCommandType::LPOP),
             "LRANGE" => Ok(ListCommandType::LRANGE),
+            "LLEN" => Ok(ListCommandType::LLEN),
             _ => Err(()),
         }
     }
