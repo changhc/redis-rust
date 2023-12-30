@@ -1,4 +1,6 @@
-use crate::execution_result::{to_array, to_null, to_simple_string, ExecutionResult};
+use crate::execution_result::{
+    ArrayReply, BulkStringReply, ExecutionResult, NullReply, RespReply, SimpleStringReply,
+};
 
 pub struct LpopResult {
     pub values: Vec<String>,
@@ -9,10 +11,19 @@ impl ExecutionResult for LpopResult {
         self.values.join(",")
     }
     fn serialise(&self) -> String {
-        match self.values.len() {
-            0 => to_null(),
-            1 => to_simple_string(&self.values[0]),
-            _ => to_array(&self.values),
-        }
+        let v: Box<dyn RespReply> = match self.values.len() {
+            0 => Box::new(NullReply {}),
+            1 => Box::new(SimpleStringReply {
+                value: self.values[0].clone(),
+            }),
+            _ => {
+                let mut rs: Vec<Box<dyn RespReply>> = Vec::new();
+                for vv in &self.values {
+                    rs.push(Box::new(BulkStringReply { value: vv.clone() }))
+                }
+                Box::new(ArrayReply { values: rs })
+            }
+        };
+        v.serialise()
     }
 }

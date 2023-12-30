@@ -1,4 +1,4 @@
-use crate::execution_result::{to_null, to_simple_string, ExecutionResult};
+use crate::execution_result::{ExecutionResult, NullReply, RespReply, SimpleStringReply};
 
 pub struct GetResult {
     pub value: Option<String>,
@@ -13,8 +13,8 @@ impl ExecutionResult for GetResult {
     }
     fn serialise(&self) -> String {
         match &self.value {
-            Some(v) => to_simple_string(v),
-            None => to_null(),
+            Some(v) => SimpleStringReply { value: v.clone() }.serialise(),
+            None => NullReply {}.serialise(),
         }
     }
 }

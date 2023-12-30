@@ -1,4 +1,4 @@
-use crate::execution_result::{to_integer, ExecutionResult};
+use crate::execution_result::{ExecutionResult, IntegerReply, RespReply};
 
 pub struct LpushResult {
     pub value: usize,
@@ -9,6 +9,9 @@ impl ExecutionResult for LpushResult {
         self.value.to_string()
     }
     fn serialise(&self) -> String {
-        to_integer(&self.to_string())
+        IntegerReply {
+            value: self.value as i64,
+        }
+        .serialise()
     }
 }
