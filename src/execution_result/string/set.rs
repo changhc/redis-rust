@@ -13,3 +13,5 @@ impl ExecutionResult for SetResult {
         .serialise()
     }
 }
+
+pub type MsetResult = SetResult;
