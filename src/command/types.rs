@@ -7,6 +7,7 @@ pub enum StringCommandType {
     DECR,
     INCRBY,
     DECRBY,
+    MGET,
 }
 
 pub enum ListCommandType {
@@ -22,7 +23,7 @@ pub enum CommandType {
     LIST(ListCommandType),
 }
 
-const STRING_COMMANDS: &[&str] = &["SET", "GET", "INCR", "DECR", "INCRBY", "DECRBY"];
+const STRING_COMMANDS: &[&str] = &["SET", "GET", "INCR", "DECR", "INCRBY", "DECRBY", "MGET"];
 const LIST_COMMANDS: &[&str] = &["LPUSH", "LPOP", "LRANGE", "LLEN"];
 
 impl FromStr for CommandType {
@@ -51,6 +52,7 @@ impl FromStr for StringCommandType {
             "DECR" => Ok(StringCommandType::DECR),
             "INCRBY" => Ok(StringCommandType::INCRBY),
             "DECRBY" => Ok(StringCommandType::DECRBY),
+            "MGET" => Ok(StringCommandType::MGET),
             _ => Err(()),
         }
     }

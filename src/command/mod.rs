@@ -68,6 +68,10 @@ fn handle_string_command(
                 Err(e) => Err(e),
             }
         }
+        StringCommandType::MGET => match string::MgetCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
 
