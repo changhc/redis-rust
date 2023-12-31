@@ -88,5 +88,13 @@ fn handle_list_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        ListCommandType::LRANGE => match list::LrangeCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
+        ListCommandType::LLEN => match list::LlenCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
