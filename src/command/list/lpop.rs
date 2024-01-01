@@ -64,12 +64,9 @@ impl Command for LpopCommand {
 
 #[cfg(test)]
 mod test {
-    use crate::data_store::DataStore;
-
+    use crate::command::list::{LpopCommand, OperationDirection, PushCommand};
     use crate::command::Command;
-
-    use super::super::LpushCommand;
-    use super::LpopCommand;
+    use crate::data_store::DataStore;
 
     #[test]
     fn should_accept_one_or_two_tokens() {
@@ -98,9 +95,12 @@ mod test {
     fn should_pop_item_from_the_front_with_count_1() {
         let key = "foo".to_string();
         let mut ds = DataStore::new();
-        let _ = LpushCommand::new(vec![key.clone(), "bar".to_string(), "baz".to_string()])
-            .unwrap()
-            .execute(&mut ds);
+        let _ = PushCommand::new(
+            vec![key.clone(), "bar".to_string(), "baz".to_string()],
+            OperationDirection::LEFT,
+        )
+        .unwrap()
+        .execute(&mut ds);
         let result = LpopCommand::new(vec![key.clone()])
             .unwrap()
             .execute(&mut ds);
@@ -114,13 +114,16 @@ mod test {
     fn should_pop_item_from_the_front_with_count_greater_than_1() {
         let key = "foo".to_string();
         let mut ds = DataStore::new();
-        let _ = LpushCommand::new(vec![
-            key.clone(),
-            "v0".to_string(),
-            "v1".to_string(),
-            "v2".to_string(),
-            "v3".to_string(),
-        ])
+        let _ = PushCommand::new(
+            vec![
+                key.clone(),
+                "v0".to_string(),
+                "v1".to_string(),
+                "v2".to_string(),
+                "v3".to_string(),
+            ],
+            OperationDirection::LEFT,
+        )
         .unwrap()
         .execute(&mut ds);
         let result = LpopCommand::new(vec![key.clone(), "3".to_string()])
@@ -145,9 +148,12 @@ mod test {
     fn should_remove_key_when_list_is_empty() {
         let key = "foo".to_string();
         let mut ds = DataStore::new();
-        let _ = LpushCommand::new(vec![key.clone(), "bar".to_string()])
-            .unwrap()
-            .execute(&mut ds);
+        let _ = PushCommand::new(
+            vec![key.clone(), "bar".to_string()],
+            OperationDirection::LEFT,
+        )
+        .unwrap()
+        .execute(&mut ds);
         let result = LpopCommand::new(vec![key.clone()])
             .unwrap()
             .execute(&mut ds);
