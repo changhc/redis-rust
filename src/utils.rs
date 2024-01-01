@@ -6,20 +6,25 @@ use super::execution_result::ErrorResult;
 use crate::data_store::DataStore;
 use log;
 use regex::Regex;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::net::TcpStream;
+use tokio::io::AsyncBufReadExt;
+use tokio::io::BufReader;
+use tokio::net::tcp::ReadHalf;
+use tokio::net::TcpStream;
 
-pub fn handle_error(mut stream: TcpStream, error_message: String) {
+pub fn handle_error(stream: TcpStream, error_message: String) {
     log::error!("Error: {}", &error_message);
     let err = ErrorResult {
         message: error_message,
     };
-    stream.write_all(err.serialise().as_bytes()).unwrap();
+    stream.try_write(err.serialise().as_bytes()).unwrap();
 }
 
-pub fn handle_connection(mut stream: &TcpStream, data_store: &mut DataStore) -> Result<(), String> {
-    return match parse_request(stream) {
+pub async fn handle_connection(
+    mut stream: TcpStream,
+    data_store: &mut DataStore,
+) -> Result<(), String> {
+    let (rx, tx) = stream.split();
+    return match parse_request(rx).await {
         Ok(tokens) => {
             log::info!("tokens: {:?}", tokens);
             let cmd = CommandFactory::new(&tokens);
@@ -28,7 +33,7 @@ pub fn handle_connection(mut stream: &TcpStream, data_store: &mut DataStore) -> 
                     Ok(res) => {
                         let msg: String = (*res).serialise();
                         log::info!("response: {}", msg);
-                        stream.write_all(&msg.as_bytes()).unwrap();
+                        tx.try_write(&msg.as_bytes()).unwrap();
                         Ok(())
                     }
                     Err(e) => Err(e.to_string()),
@@ -40,12 +45,12 @@ pub fn handle_connection(mut stream: &TcpStream, data_store: &mut DataStore) -> 
     };
 }
 
-pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
+pub async fn parse_request(stream: ReadHalf<'_>) -> Result<Vec<String>, RequestError> {
     let array_regex = Regex::new(r"^\*(\d+)\r\n$").unwrap();
     let bulk_string_regex = Regex::new(r"^\$(\d+)\r\n$").unwrap();
     let mut buf_reader = BufReader::new(stream);
     let mut length_line = String::new();
-    match buf_reader.read_line(&mut length_line) {
+    match buf_reader.read_line(&mut length_line).await {
         Ok(_) => (),
         Err(e) => {
             return Err(RequestError::ParseRequestFailed(
@@ -77,7 +82,7 @@ pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
     for i in 0..token_count {
         let mut length_line = String::new();
         let mut req_body: String = String::new();
-        match buf_reader.read_line(&mut length_line) {
+        match buf_reader.read_line(&mut length_line).await {
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
@@ -104,7 +109,7 @@ pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
             }
         };
 
-        match buf_reader.read_line(&mut req_body) {
+        match buf_reader.read_line(&mut req_body).await {
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(

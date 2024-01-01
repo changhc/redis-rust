@@ -3,6 +3,8 @@ mod ping;
 use crate::error::RequestError;
 pub use base::Command;
 use ping::PingCommand;
+mod config_get;
+use config_get::ConfigGetCommand;
 mod types;
 use std::str::FromStr;
 use types::{CommandType, ListCommandType, StringCommandType};
@@ -20,6 +22,10 @@ impl CommandFactory {
         match CommandType::from_str(&command) {
             Ok(c) => match c {
                 CommandType::PING => match PingCommand::new(body) {
+                    Ok(v) => Ok(v),
+                    Err(e) => Err(e),
+                },
+                CommandType::CONFIG => match ConfigGetCommand::new(body) {
                     Ok(v) => Ok(v),
                     Err(e) => Err(e),
                 },

@@ -20,6 +20,7 @@ pub enum ListCommandType {
 
 pub enum CommandType {
     PING,
+    CONFIG,
     STRING(StringCommandType),
     LIST(ListCommandType),
 }
@@ -35,6 +36,7 @@ impl FromStr for CommandType {
     fn from_str(s: &str) -> Result<CommandType, Self::Err> {
         match s {
             "PING" => Ok(CommandType::PING),
+            "CONFIG" => Ok(CommandType::CONFIG),
             s if STRING_COMMANDS.contains(&s) => {
                 Ok(CommandType::STRING(StringCommandType::from_str(s)?))
             }
