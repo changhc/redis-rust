@@ -1,5 +1,5 @@
-mod lpush;
-pub use lpush::PushResult;
+mod push;
+pub use push::PushResult;
 mod lpop;
 pub use lpop::LpopResult;
 mod lrange;
