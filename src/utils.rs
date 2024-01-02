@@ -21,37 +21,42 @@ pub fn handle_error(stream: &WriteHalf<'_>, error_message: String) {
 }
 
 pub async fn handle_connection(
-    rx: ReadHalf<'_>,
+    mut rx: ReadHalf<'_>,
     tx: &WriteHalf<'_>,
     data_store: Arc<Mutex<DataStore>>,
 ) -> Result<(), String> {
-    return match parse_request(rx).await {
-        Ok(tokens) => {
-            log::info!("tokens: {:?}", tokens);
-            let cmd = CommandFactory::new(&tokens);
-            match cmd {
-                Ok(c) => match c.execute(&mut data_store.lock().unwrap()) {
-                    Ok(res) => {
-                        let msg: String = (*res).serialise();
-                        log::info!("response: {}", msg);
-                        tx.try_write(&msg.as_bytes()).unwrap();
-                        Ok(())
-                    }
-                    Err(e) => Err(e.to_string()),
-                },
-                Err(e) => Err(e.to_string()),
+    loop {
+        match parse_request(&mut rx).await {
+            Ok(Some(tokens)) => {
+                log::info!("tokens: {:?}", tokens);
+                let cmd = CommandFactory::new(&tokens);
+                match cmd {
+                    Ok(c) => match c.execute(&mut data_store.lock().unwrap()) {
+                        Ok(res) => {
+                            let msg: String = (*res).serialise();
+                            log::info!("response: {}", msg);
+                            tx.try_write(&msg.as_bytes()).unwrap();
+                        }
+                        Err(e) => return Err(e.to_string()),
+                    },
+                    Err(e) => return Err(e.to_string()),
+                }
             }
-        }
-        Err(e) => Err(e.to_string()),
-    };
+            Ok(None) => break,
+            Err(e) => return Err(e.to_string()),
+        };
+    }
+    println!("done");
+    Ok(())
 }
 
-pub async fn parse_request(stream: ReadHalf<'_>) -> Result<Vec<String>, RequestError> {
+pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<String>>, RequestError> {
     let array_regex = Regex::new(r"^\*(\d+)\r\n$").unwrap();
     let bulk_string_regex = Regex::new(r"^\$(\d+)\r\n$").unwrap();
     let mut buf_reader = BufReader::new(stream);
     let mut length_line = String::new();
     match buf_reader.read_line(&mut length_line).await {
+        Ok(0) => return Ok(None),
         Ok(_) => (),
         Err(e) => {
             return Err(RequestError::ParseRequestFailed(
@@ -72,10 +77,11 @@ pub async fn parse_request(stream: ReadHalf<'_>) -> Result<Vec<String>, RequestE
             }
         },
         None => {
+            println!("ee, '{:?}'", length_line);
             return Err(RequestError::ParseRequestFailed(
                 "parse token count".to_string(),
                 "none".to_string(),
-            ))
+            ));
         }
     };
 
@@ -129,5 +135,5 @@ pub async fn parse_request(stream: ReadHalf<'_>) -> Result<Vec<String>, RequestE
             }
         };
     }
-    Ok(tokens)
+    Ok(Some(tokens))
 }
