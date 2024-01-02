@@ -6,12 +6,13 @@ use super::execution_result::ErrorResult;
 use crate::data_store::DataStore;
 use log;
 use regex::Regex;
+use std::sync::{Arc, Mutex};
 use tokio::io::AsyncBufReadExt;
 use tokio::io::BufReader;
 use tokio::net::tcp::ReadHalf;
-use tokio::net::TcpStream;
+use tokio::net::tcp::WriteHalf;
 
-pub fn handle_error(stream: TcpStream, error_message: String) {
+pub fn handle_error(stream: &WriteHalf<'_>, error_message: String) {
     log::error!("Error: {}", &error_message);
     let err = ErrorResult {
         message: error_message,
@@ -20,16 +21,16 @@ pub fn handle_error(stream: TcpStream, error_message: String) {
 }
 
 pub async fn handle_connection(
-    mut stream: TcpStream,
-    data_store: &mut DataStore,
+    rx: ReadHalf<'_>,
+    tx: &WriteHalf<'_>,
+    data_store: Arc<Mutex<DataStore>>,
 ) -> Result<(), String> {
-    let (rx, tx) = stream.split();
     return match parse_request(rx).await {
         Ok(tokens) => {
             log::info!("tokens: {:?}", tokens);
             let cmd = CommandFactory::new(&tokens);
             match cmd {
-                Ok(c) => match c.execute(data_store) {
+                Ok(c) => match c.execute(&mut data_store.lock().unwrap()) {
                     Ok(res) => {
                         let msg: String = (*res).serialise();
                         log::info!("response: {}", msg);
