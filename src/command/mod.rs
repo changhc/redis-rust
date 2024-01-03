@@ -90,7 +90,8 @@ fn handle_list_command(
                 Err(e) => Err(e),
             }
         }
-        ListCommandType::LPOP => match list::LpopCommand::new(body) {
+        ListCommandType::LPOP => match list::LpopCommand::new(body, list::OperationDirection::LEFT)
+        {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
@@ -104,6 +105,12 @@ fn handle_list_command(
         },
         ListCommandType::RPUSH => {
             match list::PushCommand::new(body, list::OperationDirection::RIGHT) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e),
+            }
+        }
+        ListCommandType::RPOP => {
+            match list::LpopCommand::new(body, list::OperationDirection::RIGHT) {
                 Ok(v) => Ok(v),
                 Err(e) => Err(e),
             }
