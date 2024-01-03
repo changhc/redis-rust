@@ -46,7 +46,7 @@ pub async fn handle_connection(
             Err(e) => return Err(e.to_string()),
         };
     }
-    println!("done");
+    log::info!("Connection dropped");
     Ok(())
 }
 
