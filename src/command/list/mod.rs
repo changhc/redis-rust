@@ -1,7 +1,7 @@
 mod push;
 pub use push::PushCommand;
-mod lpop;
-pub use lpop::LpopCommand;
+mod pop;
+pub use pop::PopCommand;
 mod lrange;
 pub use lrange::LrangeCommand;
 mod llen;
