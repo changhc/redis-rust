@@ -77,7 +77,6 @@ pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<Strin
             }
         },
         None => {
-            println!("ee, '{:?}'", length_line);
             return Err(RequestError::ParseRequestFailed(
                 "parse token count".to_string(),
                 "none".to_string(),
