@@ -2,11 +2,11 @@ use crate::execution_result::{
     ArrayReply, BulkStringReply, ExecutionResult, NullReply, RespReply, SimpleStringReply,
 };
 
-pub struct LpopResult {
+pub struct PopResult {
     pub values: Vec<String>,
 }
 
-impl ExecutionResult for LpopResult {
+impl ExecutionResult for PopResult {
     fn to_string(&self) -> String {
         self.values.join(",")
     }

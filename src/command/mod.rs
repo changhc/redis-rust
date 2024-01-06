@@ -90,14 +90,18 @@ fn handle_list_command(
     body: Vec<String>,
 ) -> Result<Box<dyn Command>, RequestError> {
     match v {
-        ListCommandType::LPUSH => match list::LpushCommand::new(body) {
-            Ok(v) => Ok(v),
-            Err(e) => Err(e),
-        },
-        ListCommandType::LPOP => match list::LpopCommand::new(body) {
-            Ok(v) => Ok(v),
-            Err(e) => Err(e),
-        },
+        ListCommandType::LPUSH => {
+            match list::PushCommand::new(body, list::OperationDirection::LEFT) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e),
+            }
+        }
+        ListCommandType::LPOP => {
+            match list::PopCommand::new(body, list::OperationDirection::LEFT) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e),
+            }
+        }
         ListCommandType::LRANGE => match list::LrangeCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
@@ -106,5 +110,17 @@ fn handle_list_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        ListCommandType::RPUSH => {
+            match list::PushCommand::new(body, list::OperationDirection::RIGHT) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e),
+            }
+        }
+        ListCommandType::RPOP => {
+            match list::PopCommand::new(body, list::OperationDirection::RIGHT) {
+                Ok(v) => Ok(v),
+                Err(e) => Err(e),
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
-mod lpush;
-pub use lpush::LpushResult;
-mod lpop;
-pub use lpop::LpopResult;
+mod push;
+pub use push::PushResult;
+mod pop;
+pub use pop::PopResult;
 mod lrange;
 pub use lrange::LrangeResult;
 mod llen;
