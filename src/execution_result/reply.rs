@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub trait RespReply {
     fn serialise(&self) -> String;
 }
@@ -56,21 +54,6 @@ impl RespReply for ArrayReply {
     fn serialise(&self) -> String {
         let mut res = format!("*{}\r\n", self.values.len());
         for v in &self.values {
-            res += v.serialise().as_str();
-        }
-        res
-    }
-}
-
-pub struct MapReply {
-    pub values: HashMap<Box<dyn RespReply>, Box<dyn RespReply>>,
-}
-
-impl RespReply for MapReply {
-    fn serialise(&self) -> String {
-        let mut res = format!("%{}\r\n", self.values.len());
-        for (k, v) in self.values.iter() {
-            res += k.serialise().as_str();
             res += v.serialise().as_str();
         }
         res
