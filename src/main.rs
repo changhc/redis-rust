@@ -11,7 +11,7 @@ async fn main() {
     let data_store = Arc::new(Mutex::new(data_store::DataStore::new()));
     let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
     while let Ok((mut stream, _address)) = listener.accept().await {
-        // Clone the arc here so that `data_store` does not get moved during the first spawn
+        // Clone the arc here so that `data_store` does not get moved during the first spawn.
         let ds_clone = data_store.clone();
         tokio::spawn(async move {
             let (rx, tx) = stream.split();

@@ -17,7 +17,8 @@ pub fn handle_error(stream: &WriteHalf<'_>, error_message: String) {
     let err = ErrorResult {
         message: error_message,
     };
-    stream.try_write(err.serialise().as_bytes()).unwrap();
+    // If the error message cannot be written to the stream somehow, just let it go.
+    let _ = stream.try_write(err.serialise().as_bytes());
 }
 
 pub async fn handle_connection(
@@ -56,6 +57,8 @@ pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<Strin
     let mut buf_reader = BufReader::new(stream);
     let mut length_line = String::new();
     match buf_reader.read_line(&mut length_line).await {
+        // No bytes read from the stream; EOF is received: this connection is closed, which means
+        // no more command from this client so we can gracefully return.
         Ok(0) => return Ok(None),
         Ok(_) => (),
         Err(e) => {
@@ -89,6 +92,7 @@ pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<Strin
         let mut length_line = String::new();
         let mut req_body: String = String::new();
         match buf_reader.read_line(&mut length_line).await {
+            // EOF here would be unexpected and should be treated as an invalid string.
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
@@ -116,6 +120,7 @@ pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<Strin
         };
 
         match buf_reader.read_line(&mut req_body).await {
+            // EOF here would be unexpected and should be treated as an invalid string.
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
