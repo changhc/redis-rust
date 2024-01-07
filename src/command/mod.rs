@@ -16,7 +16,7 @@ pub struct CommandFactory;
 impl CommandFactory {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(tokens: &Vec<String>) -> Result<Box<dyn Command>, RequestError> {
-        let command = tokens[0].clone();
+        let command = tokens[0].to_lowercase();
         let body = tokens[1..tokens.len()].into();
         match CommandType::from_str(&command) {
             Ok(c) => match c {
