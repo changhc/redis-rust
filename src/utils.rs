@@ -38,7 +38,7 @@ pub async fn handle_connection(
                         Ok(res) => {
                             let msg: String = (*res).serialise();
                             log::info!("response: {}", msg);
-                            tx.try_write(&msg.as_bytes()).unwrap();
+                            tx.try_write(msg.as_bytes()).unwrap();
                         }
                         Err(e) => return Err(e.to_string()),
                     },

@@ -39,7 +39,7 @@ pub struct MgetCommand {
 
 impl MgetCommand {
     pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
-        if tokens.len() < 1 {
+        if tokens.is_empty() {
             return Err(RequestError::IncorrectArgCount);
         }
         Ok(Box::new(MgetCommand { keys: tokens }))

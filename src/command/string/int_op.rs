@@ -86,7 +86,7 @@ impl IncrbyCommand {
                 };
                 Ok(Box::new(IncrbyCommand {
                     key: tokens[0].clone(),
-                    value: value,
+                    value,
                 }))
             }
             Err(_) => Err(RequestError::InvalidIntValue),

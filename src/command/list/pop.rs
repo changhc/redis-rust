@@ -30,7 +30,7 @@ impl PopCommand {
         };
         Ok(Box::new(PopCommand {
             key: tokens[0].clone(),
-            count: count,
+            count,
             direction,
         }))
     }
@@ -65,7 +65,7 @@ impl Command for PopCommand {
                     }
                     None => Vec::new(),
                 };
-                Ok(Box::new(PopResult { values: values }))
+                Ok(Box::new(PopResult { values }))
             }
             Err(e) => Err(e),
         }

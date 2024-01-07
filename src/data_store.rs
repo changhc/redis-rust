@@ -95,7 +95,7 @@ impl DataStore {
             key,
             type_name
         );
-        return Box::new(InternalError::Error);
+        Box::new(InternalError::Error)
     }
 }
 

@@ -46,7 +46,7 @@ impl MsetCommand {
         for i in 0..tokens.len() / 2 {
             pairs.push((tokens[2 * i].clone(), tokens[2 * i + 1].clone()));
         }
-        Ok(Box::new(MsetCommand { pairs: pairs }))
+        Ok(Box::new(MsetCommand { pairs }))
     }
 }
 

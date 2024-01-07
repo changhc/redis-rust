@@ -23,7 +23,7 @@ impl PushCommand {
         Ok(Box::new(PushCommand {
             key: tokens[0].clone(),
             values: tokens[1..].to_vec(),
-            direction: direction,
+            direction,
         }))
     }
 }
