@@ -6,46 +6,60 @@ use super::execution_result::ErrorResult;
 use crate::data_store::DataStore;
 use log;
 use regex::Regex;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::net::TcpStream;
+use std::sync::{Arc, Mutex};
+use tokio::io::AsyncBufReadExt;
+use tokio::io::BufReader;
+use tokio::net::tcp::ReadHalf;
+use tokio::net::tcp::WriteHalf;
 
-pub fn handle_error(mut stream: TcpStream, error_message: String) {
+pub fn handle_error(stream: &WriteHalf<'_>, error_message: String) {
     log::error!("Error: {}", &error_message);
     let err = ErrorResult {
         message: error_message,
     };
-    stream.write_all(err.serialise().as_bytes()).unwrap();
+    // If the error message cannot be written to the stream somehow, just let it go.
+    let _ = stream.try_write(err.serialise().as_bytes());
 }
 
-pub fn handle_connection(mut stream: &TcpStream, data_store: &mut DataStore) -> Result<(), String> {
-    return match parse_request(stream) {
-        Ok(tokens) => {
-            log::info!("tokens: {:?}", tokens);
-            let cmd = CommandFactory::new(&tokens);
-            match cmd {
-                Ok(c) => match c.execute(data_store) {
-                    Ok(res) => {
-                        let msg: String = (*res).serialise();
-                        log::info!("response: {}", msg);
-                        stream.write_all(&msg.as_bytes()).unwrap();
-                        Ok(())
-                    }
-                    Err(e) => Err(e.to_string()),
-                },
-                Err(e) => Err(e.to_string()),
+pub async fn handle_connection(
+    mut rx: ReadHalf<'_>,
+    tx: &WriteHalf<'_>,
+    data_store: Arc<Mutex<DataStore>>,
+) -> Result<(), String> {
+    loop {
+        match parse_request(&mut rx).await {
+            Ok(Some(tokens)) => {
+                log::info!("tokens: {:?}", tokens);
+                let cmd = CommandFactory::new(&tokens);
+                match cmd {
+                    Ok(c) => match c.execute(&mut data_store.lock().unwrap()) {
+                        Ok(res) => {
+                            let msg: String = (*res).serialise();
+                            log::info!("response: {}", msg);
+                            tx.try_write(&msg.as_bytes()).unwrap();
+                        }
+                        Err(e) => return Err(e.to_string()),
+                    },
+                    Err(e) => return Err(e.to_string()),
+                }
             }
-        }
-        Err(e) => Err(e.to_string()),
-    };
+            Ok(None) => break,
+            Err(e) => return Err(e.to_string()),
+        };
+    }
+    log::info!("Connection dropped");
+    Ok(())
 }
 
-pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
+pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<String>>, RequestError> {
     let array_regex = Regex::new(r"^\*(\d+)\r\n$").unwrap();
     let bulk_string_regex = Regex::new(r"^\$(\d+)\r\n$").unwrap();
     let mut buf_reader = BufReader::new(stream);
     let mut length_line = String::new();
-    match buf_reader.read_line(&mut length_line) {
+    match buf_reader.read_line(&mut length_line).await {
+        // No bytes read from the stream; EOF is received: this connection is closed, which means
+        // no more command from this client so we can gracefully return.
+        Ok(0) => return Ok(None),
         Ok(_) => (),
         Err(e) => {
             return Err(RequestError::ParseRequestFailed(
@@ -69,7 +83,7 @@ pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
             return Err(RequestError::ParseRequestFailed(
                 "parse token count".to_string(),
                 "none".to_string(),
-            ))
+            ));
         }
     };
 
@@ -77,7 +91,8 @@ pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
     for i in 0..token_count {
         let mut length_line = String::new();
         let mut req_body: String = String::new();
-        match buf_reader.read_line(&mut length_line) {
+        match buf_reader.read_line(&mut length_line).await {
+            // EOF here would be unexpected and should be treated as an invalid string.
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
@@ -104,7 +119,8 @@ pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
             }
         };
 
-        match buf_reader.read_line(&mut req_body) {
+        match buf_reader.read_line(&mut req_body).await {
+            // EOF here would be unexpected and should be treated as an invalid string.
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
@@ -123,5 +139,5 @@ pub fn parse_request(stream: &TcpStream) -> Result<Vec<String>, RequestError> {
             }
         };
     }
-    Ok(tokens)
+    Ok(Some(tokens))
 }
