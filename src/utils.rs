@@ -26,8 +26,10 @@ pub async fn handle_connection(
     tx: &WriteHalf<'_>,
     data_store: Arc<Mutex<DataStore>>,
 ) -> Result<(), String> {
+    let array_regex: Regex = Regex::new(r"^\*(\d+)\r\n$").unwrap();
+    let bulk_string_regex: Regex = Regex::new(r"^\$(\d+)\r\n$").unwrap();
     loop {
-        match parse_request(&mut rx).await {
+        match parse_request(&mut rx, &array_regex, &bulk_string_regex).await {
             Ok(Some(tokens)) => {
                 log::info!("tokens: {:?}", tokens);
                 let cmd = CommandFactory::new(&tokens);
@@ -51,9 +53,11 @@ pub async fn handle_connection(
     Ok(())
 }
 
-pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<String>>, RequestError> {
-    let array_regex = Regex::new(r"^\*(\d+)\r\n$").unwrap();
-    let bulk_string_regex = Regex::new(r"^\$(\d+)\r\n$").unwrap();
+pub async fn parse_request(
+    stream: &mut ReadHalf<'_>,
+    array_regex: &Regex,
+    bulk_string_regex: &Regex,
+) -> Result<Option<Vec<String>>, RequestError> {
     let mut buf_reader = BufReader::new(stream);
     let mut length_line = String::new();
     match buf_reader.read_line(&mut length_line).await {
@@ -93,6 +97,7 @@ pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<Strin
         let mut req_body: String = String::new();
         match buf_reader.read_line(&mut length_line).await {
             // EOF here would be unexpected and should be treated as an invalid string.
+            Ok(0) => return Ok(None),
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
@@ -121,6 +126,7 @@ pub async fn parse_request(stream: &mut ReadHalf<'_>) -> Result<Option<Vec<Strin
 
         match buf_reader.read_line(&mut req_body).await {
             // EOF here would be unexpected and should be treated as an invalid string.
+            Ok(0) => return Ok(None),
             Ok(_) => (),
             Err(e) => {
                 return Err(RequestError::ParseRequestFailed(
