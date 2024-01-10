@@ -7,7 +7,10 @@ mod types;
 use std::str::FromStr;
 use types::{CommandType, ListCommandType, StringCommandType};
 
+use self::types::SetCommandType;
+
 mod list;
+mod set;
 mod string;
 
 #[derive(Debug)]
@@ -25,6 +28,7 @@ impl CommandFactory {
                 },
                 CommandType::STRING(v) => handle_string_command(v, body),
                 CommandType::LIST(v) => handle_list_command(v, body),
+                CommandType::Set(v) => handle_set_command(v, body),
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),
         }
@@ -116,5 +120,17 @@ fn handle_list_command(
                 Err(e) => Err(e),
             }
         }
+    }
+}
+
+fn handle_set_command(
+    v: SetCommandType,
+    body: Vec<String>,
+) -> Result<Box<dyn Command>, RequestError> {
+    match v {
+        SetCommandType::SAdd => match set::SAddCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
