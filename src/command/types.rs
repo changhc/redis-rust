@@ -1,29 +1,29 @@
 use std::str::FromStr;
 
 pub enum StringCommandType {
-    SET,
-    GET,
-    INCR,
-    DECR,
-    INCRBY,
-    DECRBY,
-    MGET,
-    MSET,
+    Set,
+    Get,
+    Incr,
+    Decr,
+    IncrBy,
+    DecrBy,
+    MGet,
+    MSet,
 }
 
 pub enum ListCommandType {
-    LPUSH,
-    LPOP,
-    LRANGE,
-    LLEN,
-    RPUSH,
-    RPOP,
+    LPush,
+    LPop,
+    LRange,
+    LLen,
+    RPush,
+    RPop,
 }
 
 pub enum CommandType {
-    PING,
-    STRING(StringCommandType),
-    LIST(ListCommandType),
+    Ping,
+    String(StringCommandType),
+    List(ListCommandType),
 }
 
 const STRING_COMMANDS: &[&str] = &[
@@ -36,11 +36,11 @@ impl FromStr for CommandType {
 
     fn from_str(s: &str) -> Result<CommandType, Self::Err> {
         match s {
-            "PING" => Ok(CommandType::PING),
+            "PING" => Ok(CommandType::Ping),
             s if STRING_COMMANDS.contains(&s) => {
-                Ok(CommandType::STRING(StringCommandType::from_str(s)?))
+                Ok(CommandType::String(StringCommandType::from_str(s)?))
             }
-            s if LIST_COMMANDS.contains(&s) => Ok(CommandType::LIST(ListCommandType::from_str(s)?)),
+            s if LIST_COMMANDS.contains(&s) => Ok(CommandType::List(ListCommandType::from_str(s)?)),
             _ => Err(()),
         }
     }
@@ -51,14 +51,14 @@ impl FromStr for StringCommandType {
 
     fn from_str(s: &str) -> Result<StringCommandType, Self::Err> {
         match s {
-            "SET" => Ok(StringCommandType::SET),
-            "GET" => Ok(StringCommandType::GET),
-            "INCR" => Ok(StringCommandType::INCR),
-            "DECR" => Ok(StringCommandType::DECR),
-            "INCRBY" => Ok(StringCommandType::INCRBY),
-            "DECRBY" => Ok(StringCommandType::DECRBY),
-            "MGET" => Ok(StringCommandType::MGET),
-            "MSET" => Ok(StringCommandType::MSET),
+            "SET" => Ok(StringCommandType::Set),
+            "GET" => Ok(StringCommandType::Get),
+            "INCR" => Ok(StringCommandType::Incr),
+            "DECR" => Ok(StringCommandType::Decr),
+            "INCRBY" => Ok(StringCommandType::IncrBy),
+            "DECRBY" => Ok(StringCommandType::DecrBy),
+            "MGET" => Ok(StringCommandType::MGet),
+            "MSET" => Ok(StringCommandType::MSet),
             _ => Err(()),
         }
     }
@@ -69,12 +69,12 @@ impl FromStr for ListCommandType {
 
     fn from_str(s: &str) -> Result<ListCommandType, Self::Err> {
         match s {
-            "LPUSH" => Ok(ListCommandType::LPUSH),
-            "LPOP" => Ok(ListCommandType::LPOP),
-            "LRANGE" => Ok(ListCommandType::LRANGE),
-            "LLEN" => Ok(ListCommandType::LLEN),
-            "RPUSH" => Ok(ListCommandType::RPUSH),
-            "RPOP" => Ok(ListCommandType::RPOP),
+            "LPUSH" => Ok(ListCommandType::LPush),
+            "LPOP" => Ok(ListCommandType::LPop),
+            "LRANGE" => Ok(ListCommandType::LRange),
+            "LLEN" => Ok(ListCommandType::LLen),
+            "RPUSH" => Ok(ListCommandType::RPush),
+            "RPOP" => Ok(ListCommandType::RPop),
             _ => Err(()),
         }
     }

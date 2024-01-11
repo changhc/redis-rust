@@ -30,7 +30,7 @@ impl PopCommand {
         };
         Ok(Box::new(PopCommand {
             key: tokens[0].clone(),
-            count: count,
+            count,
             direction,
         }))
     }
@@ -48,8 +48,8 @@ impl Command for PopCommand {
                         let mut values = Vec::new();
                         for _ in 0..self.count {
                             let pop_result = match &self.direction {
-                                OperationDirection::LEFT => list.pop_front(),
-                                OperationDirection::RIGHT => list.pop_back(),
+                                OperationDirection::Left => list.pop_front(),
+                                OperationDirection::Right => list.pop_back(),
                             };
                             match pop_result {
                                 Some(v) => values.push(v),
@@ -65,7 +65,7 @@ impl Command for PopCommand {
                     }
                     None => Vec::new(),
                 };
-                Ok(Box::new(PopResult { values: values }))
+                Ok(Box::new(PopResult { values }))
             }
             Err(e) => Err(e),
         }
@@ -80,12 +80,12 @@ mod test {
 
     #[test]
     fn should_accept_one_or_two_tokens() {
-        let v = PopCommand::new(vec!["foo".to_string()], OperationDirection::LEFT).unwrap();
+        let v = PopCommand::new(vec!["foo".to_string()], OperationDirection::Left).unwrap();
         assert_eq!(v.key, "foo".to_string());
         assert_eq!(v.count, 1);
         let v = PopCommand::new(
             vec!["foo".to_string(), "3".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap();
         assert_eq!(v.key, "foo".to_string());
@@ -97,14 +97,14 @@ mod test {
         let expected_msg = "value is out of range, must be positive".to_string();
         let err = PopCommand::new(
             vec!["foo".to_string(), "bar".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .err()
         .unwrap();
         assert_eq!(err.to_string(), expected_msg);
         let err = PopCommand::new(
             vec!["foo".to_string(), "-6".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .err()
         .unwrap();
@@ -117,11 +117,11 @@ mod test {
         let mut ds = DataStore::new();
         let _ = PushCommand::new(
             vec![key.clone(), "bar".to_string(), "baz".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap()
         .execute(&mut ds);
-        let result = PopCommand::new(vec![key.clone()], OperationDirection::LEFT)
+        let result = PopCommand::new(vec![key.clone()], OperationDirection::Left)
             .unwrap()
             .execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "baz".to_string());
@@ -142,11 +142,11 @@ mod test {
                 "v2".to_string(),
                 "v3".to_string(),
             ],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap()
         .execute(&mut ds);
-        let result = PopCommand::new(vec![key.clone(), "3".to_string()], OperationDirection::LEFT)
+        let result = PopCommand::new(vec![key.clone(), "3".to_string()], OperationDirection::Left)
             .unwrap()
             .execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "v3,v2,v1");
@@ -167,13 +167,13 @@ mod test {
                 "v2".to_string(),
                 "v3".to_string(),
             ],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap()
         .execute(&mut ds);
         let result = PopCommand::new(
             vec![key.clone(), "3".to_string()],
-            OperationDirection::RIGHT,
+            OperationDirection::Right,
         )
         .unwrap()
         .execute(&mut ds);
@@ -186,7 +186,7 @@ mod test {
     #[test]
     fn should_return_nothing_when_key_does_not_exist() {
         let mut ds = DataStore::new();
-        let result = PopCommand::new(vec!["foo".to_string()], OperationDirection::LEFT)
+        let result = PopCommand::new(vec!["foo".to_string()], OperationDirection::Left)
             .unwrap()
             .execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "".to_string());
@@ -198,11 +198,11 @@ mod test {
         let mut ds = DataStore::new();
         let _ = PushCommand::new(
             vec![key.clone(), "bar".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap()
         .execute(&mut ds);
-        let result = PopCommand::new(vec![key.clone()], OperationDirection::LEFT)
+        let result = PopCommand::new(vec![key.clone()], OperationDirection::Left)
             .unwrap()
             .execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "bar".to_string());

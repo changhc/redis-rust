@@ -39,7 +39,7 @@ pub struct MgetCommand {
 
 impl MgetCommand {
     pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
-        if tokens.len() < 1 {
+        if tokens.is_empty() {
             return Err(RequestError::IncorrectArgCount);
         }
         Ok(Box::new(MgetCommand { keys: tokens }))
@@ -86,7 +86,7 @@ mod test {
         fn should_get_value_if_key_exists() {
             let cmd = GetCommand::new(vec!["foo".to_string()]).unwrap();
             let mut ds = DataStore::new();
-            ds.set_string_overwrite(&"foo".to_string(), &"bar".to_string());
+            ds.set_string_overwrite("foo", "bar");
             let result = cmd.execute(&mut ds);
             assert_eq!(result.unwrap().to_string(), "bar".to_string());
         }
@@ -109,8 +109,8 @@ mod test {
             let cmd = MgetCommand::new(vec!["k1".to_string(), "k2".to_string(), "k3".to_string()])
                 .unwrap();
             let mut ds = DataStore::new();
-            ds.set_string_overwrite(&"k1".to_string(), &"v1".to_string());
-            ds.set_string_overwrite(&"k3".to_string(), &"v3".to_string());
+            ds.set_string_overwrite("k1", "v1");
+            ds.set_string_overwrite("k3", "v3");
             let result = cmd.execute(&mut ds);
             assert_eq!(result.unwrap().to_string(), "v1,,v3".to_string());
         }

@@ -1,10 +1,10 @@
 use crate::execution_result::{ArrayReply, BulkStringReply, ExecutionResult, RespReply};
 
-pub struct LrangeResult {
+pub struct LRangeResult {
     pub values: Vec<String>,
 }
 
-impl ExecutionResult for LrangeResult {
+impl ExecutionResult for LRangeResult {
     fn to_string(&self) -> String {
         self.values.join(",")
     }

@@ -8,7 +8,7 @@ pub struct PingCommand;
 
 impl PingCommand {
     pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
-        if tokens.len() != 0 {
+        if !tokens.is_empty() {
             return Err(RequestError::IncorrectArgCount);
         }
         Ok(Box::new(PingCommand {}))
