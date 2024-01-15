@@ -4,8 +4,8 @@ use crate::error::{IncrCommandError, RequestError};
 use crate::execution_result::{string::IntOpResult, ExecutionResult};
 
 pub enum NumOperator {
-    INCR,
-    DECR,
+    Incr,
+    Decr,
 }
 
 fn _execute(
@@ -47,8 +47,8 @@ impl IncrCommand {
         Ok(Box::new(IncrCommand {
             key: tokens[0].clone(),
             value: match op {
-                NumOperator::DECR => -1,
-                NumOperator::INCR => 1,
+                NumOperator::Decr => -1,
+                NumOperator::Incr => 1,
             },
         }))
     }
@@ -78,15 +78,15 @@ impl IncrbyCommand {
         match tokens[1].parse::<i64>() {
             Ok(increment) => {
                 let value = match op {
-                    NumOperator::DECR => match increment.checked_neg() {
+                    NumOperator::Decr => match increment.checked_neg() {
                         Some(v) => v,
                         None => return Err(RequestError::InvalidIntValue),
                     },
-                    NumOperator::INCR => increment,
+                    NumOperator::Incr => increment,
                 };
                 Ok(Box::new(IncrbyCommand {
                     key: tokens[0].clone(),
-                    value: value,
+                    value,
                 }))
             }
             Err(_) => Err(RequestError::InvalidIntValue),
@@ -117,7 +117,7 @@ mod test {
         fn should_accept_exactly_one_token() {
             let err = IncrCommand::new(
                 vec!["foo".to_string(), "bar".to_string()],
-                NumOperator::INCR,
+                NumOperator::Incr,
             )
             .err()
             .unwrap();
@@ -125,14 +125,14 @@ mod test {
                 err.to_string(),
                 "ERR wrong number of arguments for command".to_string()
             );
-            let v = IncrCommand::new(vec!["foo".to_string()], NumOperator::INCR).unwrap();
+            let v = IncrCommand::new(vec!["foo".to_string()], NumOperator::Incr).unwrap();
             assert_eq!(v.key, "foo".to_string());
         }
 
         #[test]
         fn should_insert_value_when_key_is_not_set() {
             let key = "foo".to_string();
-            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::INCR).unwrap();
+            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::Incr).unwrap();
             let mut ds = DataStore::new();
             assert!(ds.get_string(&key).unwrap().is_none());
             cmd.execute(&mut ds).unwrap();
@@ -142,7 +142,7 @@ mod test {
         #[test]
         fn should_insert_value_when_key_is_not_set_decr() {
             let key = "foo".to_string();
-            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::DECR).unwrap();
+            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::Decr).unwrap();
             let mut ds = DataStore::new();
             assert!(ds.get_string(&key).unwrap().is_none());
             cmd.execute(&mut ds).unwrap();
@@ -152,16 +152,16 @@ mod test {
         #[test]
         fn should_throw_error_when_value_is_not_int() {
             let key = "foo".to_string();
-            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::INCR).unwrap();
+            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::Incr).unwrap();
             let mut ds = DataStore::new();
-            ds.set_string_overwrite(&key, &"bar".to_string());
+            ds.set_string_overwrite(&key, "bar");
             assert!(cmd.execute(&mut ds).is_err());
         }
 
         #[test]
         fn should_throw_error_when_value_overflows_incr() {
             let key = "foo".to_string();
-            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::INCR).unwrap();
+            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::Incr).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MAX.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
@@ -171,7 +171,7 @@ mod test {
         #[test]
         fn should_throw_error_when_value_overflows_decr() {
             let key = "foo".to_string();
-            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::DECR).unwrap();
+            let cmd = IncrCommand::new(vec![key.clone()], NumOperator::Decr).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MIN.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
@@ -187,7 +187,7 @@ mod test {
 
         #[test]
         fn should_accept_exactly_two_tokens() {
-            let err = IncrbyCommand::new(vec!["foo".to_string()], NumOperator::INCR)
+            let err = IncrbyCommand::new(vec!["foo".to_string()], NumOperator::Incr)
                 .err()
                 .unwrap();
             assert_eq!(
@@ -195,7 +195,7 @@ mod test {
                 "ERR wrong number of arguments for command".to_string()
             );
 
-            let v = IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], NumOperator::INCR)
+            let v = IncrbyCommand::new(vec!["foo".to_string(), "5".to_string()], NumOperator::Incr)
                 .unwrap();
             assert_eq!(v.key, "foo".to_string());
             assert_eq!(v.value, 5);
@@ -205,7 +205,7 @@ mod test {
         fn should_reject_non_int_increment() {
             let err = IncrbyCommand::new(
                 vec!["foo".to_string(), "bar".to_string()],
-                NumOperator::INCR,
+                NumOperator::Incr,
             )
             .err()
             .unwrap();
@@ -216,7 +216,7 @@ mod test {
         fn should_throw_error_when_value_overflows_incr() {
             let key = "foo".to_string();
             let cmd =
-                IncrbyCommand::new(vec![key.clone(), "5".to_string()], NumOperator::INCR).unwrap();
+                IncrbyCommand::new(vec![key.clone(), "5".to_string()], NumOperator::Incr).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MAX.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
@@ -227,7 +227,7 @@ mod test {
         fn should_throw_error_when_value_overflows_decr() {
             let key = "foo".to_string();
             let cmd =
-                IncrbyCommand::new(vec![key.clone(), "5".to_string()], NumOperator::DECR).unwrap();
+                IncrbyCommand::new(vec![key.clone(), "5".to_string()], NumOperator::Decr).unwrap();
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MIN.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();

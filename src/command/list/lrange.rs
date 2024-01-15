@@ -1,17 +1,17 @@
 use crate::command::Command;
 use crate::data_store::DataStore;
 use crate::error::RequestError;
-use crate::execution_result::list::LrangeResult;
+use crate::execution_result::list::LRangeResult;
 use crate::execution_result::ExecutionResult;
 
 #[derive(Debug)]
-pub struct LrangeCommand {
+pub struct LRangeCommand {
     key: String,
     start: i64,
     stop: i64,
 }
 
-impl LrangeCommand {
+impl LRangeCommand {
     pub fn new(tokens: Vec<String>) -> Result<Box<Self>, RequestError> {
         if tokens.len() != 3 {
             return Err(RequestError::IncorrectArgCount);
@@ -22,7 +22,7 @@ impl LrangeCommand {
         let Ok(stop) = tokens[2].parse::<i64>() else {
             return Err(RequestError::InvalidIntValue);
         };
-        Ok(Box::new(LrangeCommand {
+        Ok(Box::new(LRangeCommand {
             key: tokens[0].clone(),
             start,
             stop,
@@ -30,7 +30,7 @@ impl LrangeCommand {
     }
 }
 
-impl Command for LrangeCommand {
+impl Command for LRangeCommand {
     fn execute(
         &self,
         data_store: &mut DataStore,
@@ -54,9 +54,9 @@ impl Command for LrangeCommand {
                             values.push(item.clone());
                         }
                     }
-                    Ok(Box::new(LrangeResult { values }))
+                    Ok(Box::new(LRangeResult { values }))
                 }
-                None => Ok(Box::new(LrangeResult { values: Vec::new() })),
+                None => Ok(Box::new(LRangeResult { values: Vec::new() })),
             },
             Err(e) => Err(e),
         }
@@ -65,19 +65,19 @@ impl Command for LrangeCommand {
 
 #[cfg(test)]
 mod test {
-    use super::LrangeCommand;
+    use super::LRangeCommand;
     use crate::command::Command;
     use crate::data_store::DataStore;
 
     #[test]
     fn should_accept_exactly_3_tokens() {
-        let err = LrangeCommand::new(vec!["foo".to_string()]).err().unwrap();
+        let err = LRangeCommand::new(vec!["foo".to_string()]).err().unwrap();
         assert_eq!(
             err.to_string(),
             "ERR wrong number of arguments for command".to_string()
         );
         let v =
-            LrangeCommand::new(vec!["foo".to_string(), "1".to_string(), "2".to_string()]).unwrap();
+            LRangeCommand::new(vec!["foo".to_string(), "1".to_string(), "2".to_string()]).unwrap();
         assert_eq!(v.key, "foo".to_string());
         assert_eq!(v.start, 1);
         assert_eq!(v.stop, 2);
@@ -85,7 +85,7 @@ mod test {
 
     #[test]
     fn should_reject_invalid_start_and_stop() {
-        let err = LrangeCommand::new(vec!["foo".to_string(), "bad".to_string(), "2".to_string()])
+        let err = LRangeCommand::new(vec!["foo".to_string(), "bad".to_string(), "2".to_string()])
             .err()
             .unwrap();
         assert_eq!(
@@ -103,18 +103,18 @@ mod test {
         for v in 0..10 {
             list.push_back(v.to_string());
         }
-        let cmd = LrangeCommand::new(vec![key.clone(), "1".to_string(), "3".to_string()]).unwrap();
+        let cmd = LRangeCommand::new(vec![key.clone(), "1".to_string(), "3".to_string()]).unwrap();
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "1,2,3".to_string());
 
         // negative start/stop
         let cmd =
-            LrangeCommand::new(vec![key.clone(), "-4".to_string(), "-2".to_string()]).unwrap();
+            LRangeCommand::new(vec![key.clone(), "-4".to_string(), "-2".to_string()]).unwrap();
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "6,7,8".to_string());
 
         // non-existent key
-        let cmd = LrangeCommand::new(vec!["bar".to_string(), "-4".to_string(), "-2".to_string()])
+        let cmd = LRangeCommand::new(vec!["bar".to_string(), "-4".to_string(), "-2".to_string()])
             .unwrap();
         let result = cmd.execute(&mut ds);
         assert_eq!(result.unwrap().to_string(), "".to_string());

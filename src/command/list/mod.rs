@@ -3,12 +3,12 @@ pub use push::PushCommand;
 mod pop;
 pub use pop::PopCommand;
 mod lrange;
-pub use lrange::LrangeCommand;
+pub use lrange::LRangeCommand;
 mod llen;
-pub use llen::LlenCommand;
+pub use llen::LLenCommand;
 
 #[derive(Debug)]
 pub enum OperationDirection {
-    LEFT,
-    RIGHT,
+    Left,
+    Right,
 }

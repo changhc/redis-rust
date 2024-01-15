@@ -23,7 +23,7 @@ impl PushCommand {
         Ok(Box::new(PushCommand {
             key: tokens[0].clone(),
             values: tokens[1..].to_vec(),
-            direction: direction,
+            direction,
         }))
     }
 }
@@ -44,8 +44,8 @@ impl Command for PushCommand {
                 };
                 for value in &self.values {
                     match &self.direction {
-                        OperationDirection::LEFT => list.push_front(value.clone()),
-                        OperationDirection::RIGHT => list.push_back(value.clone()),
+                        OperationDirection::Left => list.push_front(value.clone()),
+                        OperationDirection::Right => list.push_back(value.clone()),
                     };
                 }
                 Ok(Box::new(PushResult { value: list.len() }))
@@ -64,7 +64,7 @@ mod test {
 
     #[test]
     fn should_accept_at_least_two_tokens() {
-        let err = PushCommand::new(vec!["foo".to_string()], OperationDirection::LEFT)
+        let err = PushCommand::new(vec!["foo".to_string()], OperationDirection::Left)
             .err()
             .unwrap();
         assert_eq!(
@@ -73,7 +73,7 @@ mod test {
         );
         let v = PushCommand::new(
             vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap();
         assert_eq!(v.key, "foo".to_string());
@@ -85,7 +85,7 @@ mod test {
         let key = "foo".to_string();
         let cmd = PushCommand::new(
             vec![key.clone(), "bar".to_string(), "baz".to_string()],
-            OperationDirection::LEFT,
+            OperationDirection::Left,
         )
         .unwrap();
         let mut ds = DataStore::new();
@@ -101,7 +101,7 @@ mod test {
         let key = "foo".to_string();
         let cmd = PushCommand::new(
             vec![key.clone(), "bar".to_string(), "baz".to_string()],
-            OperationDirection::RIGHT,
+            OperationDirection::Right,
         )
         .unwrap();
         let mut ds = DataStore::new();

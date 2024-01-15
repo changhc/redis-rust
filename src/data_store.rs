@@ -23,21 +23,21 @@ impl DataStore {
         }
     }
 
-    pub fn set_string_overwrite(&mut self, key: &String, value: &String) {
+    pub fn set_string_overwrite(&mut self, key: &str, value: &str) {
         self.ds
-            .insert(key.clone(), RedisEntry::create_string(value));
+            .insert(key.to_owned(), RedisEntry::create_string(value));
     }
 
     pub fn set_string(
         &mut self,
         key: &String,
-        value: &String,
+        value: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self.ds.get_mut(key) {
             Some(entry) => match entry.type_ {
                 RedisEntryType::String => match &entry.string {
                     Some(_) => {
-                        entry.string = Some(value.clone());
+                        entry.string = Some(value.to_owned());
                         Ok(())
                     }
                     None => Err(Self::throw_integration_error(key, RedisEntryType::String)),
@@ -123,7 +123,13 @@ impl DataStore {
             key,
             type_name
         );
-        return Box::new(InternalError::Error);
+        Box::new(InternalError::Error)
+    }
+}
+
+impl Default for DataStore {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -141,10 +147,10 @@ pub struct RedisEntry {
 }
 
 impl RedisEntry {
-    pub fn create_string(value: &String) -> Self {
+    pub fn create_string(value: &str) -> Self {
         RedisEntry {
             type_: RedisEntryType::String,
-            string: Some(value.clone()),
+            string: Some(value.to_owned()),
             list: None,
             set: None,
         }

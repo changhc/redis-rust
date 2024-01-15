@@ -1,10 +1,10 @@
 use crate::execution_result::{ExecutionResult, IntegerReply, RespReply};
 
-pub struct LlenResult {
+pub struct LLenResult {
     pub value: usize,
 }
 
-impl ExecutionResult for LlenResult {
+impl ExecutionResult for LLenResult {
     fn to_string(&self) -> String {
         self.value.to_string()
     }
