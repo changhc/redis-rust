@@ -133,5 +133,9 @@ fn handle_set_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        SetCommandType::SRem => match set::SRemCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
