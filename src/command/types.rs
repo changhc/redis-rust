@@ -20,16 +20,22 @@ pub enum ListCommandType {
     RPop,
 }
 
+pub enum SetCommandType {
+    SAdd,
+}
+
 pub enum CommandType {
     Ping,
     String(StringCommandType),
     List(ListCommandType),
+    Set(SetCommandType),
 }
 
 const STRING_COMMANDS: &[&str] = &[
     "set", "get", "incr", "decr", "incrby", "decrby", "mget", "mset",
 ];
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
+const SET_COMMANDS: &[&str] = &["sadd"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -41,6 +47,7 @@ impl FromStr for CommandType {
                 Ok(CommandType::String(StringCommandType::from_str(s)?))
             }
             s if LIST_COMMANDS.contains(&s) => Ok(CommandType::List(ListCommandType::from_str(s)?)),
+            s if SET_COMMANDS.contains(&s) => Ok(CommandType::Set(SetCommandType::from_str(s)?)),
             _ => Err(()),
         }
     }
@@ -75,6 +82,17 @@ impl FromStr for ListCommandType {
             "llen" => Ok(ListCommandType::LLen),
             "rpush" => Ok(ListCommandType::RPush),
             "rpop" => Ok(ListCommandType::RPop),
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for SetCommandType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<SetCommandType, Self::Err> {
+        match s {
+            "sadd" => Ok(SetCommandType::SAdd),
             _ => Err(()),
         }
     }
