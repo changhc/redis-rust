@@ -21,8 +21,9 @@ pub enum ListCommandType {
 }
 
 pub enum SetCommandType {
-    SAdd,
-    SRem,
+    Add,
+    Rem,
+    Members,
 }
 
 pub enum CommandType {
@@ -36,7 +37,7 @@ const STRING_COMMANDS: &[&str] = &[
     "set", "get", "incr", "decr", "incrby", "decrby", "mget", "mset",
 ];
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
-const SET_COMMANDS: &[&str] = &["sadd", "srem"];
+const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -93,8 +94,9 @@ impl FromStr for SetCommandType {
 
     fn from_str(s: &str) -> Result<SetCommandType, Self::Err> {
         match s {
-            "sadd" => Ok(SetCommandType::SAdd),
-            "srem" => Ok(SetCommandType::SRem),
+            "sadd" => Ok(SetCommandType::Add),
+            "srem" => Ok(SetCommandType::Rem),
+            "smembers" => Ok(SetCommandType::Members),
             _ => Err(()),
         }
     }

@@ -129,11 +129,15 @@ fn handle_set_command(
     body: Vec<String>,
 ) -> Result<Box<dyn Command>, RequestError> {
     match v {
-        SetCommandType::SAdd => match set::SAddCommand::new(body) {
+        SetCommandType::Add => match set::SAddCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
-        SetCommandType::SRem => match set::SRemCommand::new(body) {
+        SetCommandType::Rem => match set::SRemCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
+        SetCommandType::Members => match set::SMembersCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
