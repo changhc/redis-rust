@@ -77,7 +77,7 @@ mod test {
             .unwrap();
         let cmd = SMembersCommand::new(vec![key.clone()]).unwrap();
         let result = cmd.execute(&mut ds).unwrap().to_string();
-        let mut values: Vec<&str> = result.split(",").collect::<Vec<&str>>();
+        let mut values: Vec<&str> = result.split(',').collect::<Vec<&str>>();
         values.sort();
         assert_eq!(values, vec!["v1", "v2"]);
     }
