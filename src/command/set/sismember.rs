@@ -87,7 +87,7 @@ mod test {
 
     #[test]
     fn should_return_exists_or_not() {
-        let key = "foo1".to_string();
+        let key = "foo".to_string();
         let mut ds = DataStore::new();
         // insert set
         SAddCommand::new(vec![key.clone(), "v1".to_string()])
