@@ -141,5 +141,9 @@ fn handle_set_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        SetCommandType::IsMember => match set::SIsmemberCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
