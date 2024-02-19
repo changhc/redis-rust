@@ -6,3 +6,5 @@ mod smembers;
 pub use smembers::SMembersCommand;
 mod sismember;
 pub use sismember::SIsmemberCommand;
+mod scard;
+pub use scard::SCardCommand;

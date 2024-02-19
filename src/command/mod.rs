@@ -145,5 +145,9 @@ fn handle_set_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        SetCommandType::Card => match set::SCardCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
