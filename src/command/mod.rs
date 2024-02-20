@@ -18,7 +18,7 @@ pub struct CommandFactory;
 
 impl CommandFactory {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(tokens: &Vec<String>) -> Result<Box<dyn Command>, RequestError> {
+    pub fn new(tokens: &[String]) -> Result<Box<dyn Command>, RequestError> {
         let command = tokens[0].to_lowercase();
         let body = tokens[1..tokens.len()].into();
         match CommandType::from_str(&command) {
@@ -142,6 +142,10 @@ fn handle_set_command(
             Err(e) => Err(e),
         },
         SetCommandType::IsMember => match set::SIsmemberCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
+        SetCommandType::Card => match set::SCardCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
