@@ -8,3 +8,5 @@ mod sismember;
 pub use sismember::SIsmemberCommand;
 mod scard;
 pub use scard::SCardCommand;
+mod sdiff;
+pub use sdiff::SDiffCommand;
