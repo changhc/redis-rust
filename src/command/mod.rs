@@ -149,5 +149,9 @@ fn handle_set_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        SetCommandType::Diff => match set::SDiffCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
