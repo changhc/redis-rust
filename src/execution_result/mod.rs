@@ -7,6 +7,7 @@ pub use error::ErrorResult;
 mod ping;
 pub use ping::PingResult;
 
+pub mod hash;
 pub mod list;
 pub mod set;
 pub mod string;

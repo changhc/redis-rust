@@ -209,7 +209,7 @@ impl RedisEntry {
 
     pub fn init_hash() -> Self {
         RedisEntry {
-            type_: RedisEntryType::Set,
+            type_: RedisEntryType::Hash,
             string: None,
             list: None,
             set: None,
