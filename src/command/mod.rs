@@ -5,9 +5,7 @@ pub use base::Command;
 use ping::PingCommand;
 mod types;
 use std::str::FromStr;
-use types::{CommandType, ListCommandType, StringCommandType};
-
-use self::types::{HashCommandType, SetCommandType};
+use types::{CommandType, HashCommandType, ListCommandType, SetCommandType, StringCommandType};
 
 mod hash;
 mod list;
