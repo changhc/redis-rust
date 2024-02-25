@@ -105,6 +105,33 @@ impl DataStore {
         }
     }
 
+    pub fn get_hash_mut(
+        &mut self,
+        key: &String,
+    ) -> Result<Option<&mut HashMap<String, String>>, Box<dyn std::error::Error>> {
+        match self.ds.get_mut(key) {
+            Some(entry) => match entry.type_ {
+                RedisEntryType::Hash => match &mut entry.hash {
+                    Some(v) => Ok(Some(v)),
+                    None => Err(Self::throw_integration_error(key, RedisEntryType::Hash)),
+                },
+                _ => Err(Box::new(ExecutionError::IncorrectType)),
+            },
+            None => Ok(None),
+        }
+    }
+
+    pub fn insert_hash(&mut self, key: &String) -> Result<(), Box<dyn std::error::Error>> {
+        match self.ds.get(key) {
+            Some(_) => Err(Box::new(InternalError::KeyError)),
+            None => {
+                let s = RedisEntry::init_hash();
+                self.ds.insert(key.clone(), s);
+                Ok(())
+            }
+        }
+    }
+
     pub fn drop_key(&mut self, key: &String) {
         self.ds.remove(key);
     }
@@ -117,6 +144,7 @@ impl DataStore {
             RedisEntryType::String => "String",
             RedisEntryType::List => "List",
             RedisEntryType::Set => "Set",
+            RedisEntryType::Hash => "Hash",
         };
         log::error!(
             "Integration error at key '{}': expecting type '{}' but data is not found",
@@ -137,6 +165,7 @@ pub enum RedisEntryType {
     String,
     List,
     Set,
+    Hash,
 }
 
 pub struct RedisEntry {
@@ -144,6 +173,7 @@ pub struct RedisEntry {
     pub string: Option<String>,
     pub list: Option<LinkedList<String>>,
     pub set: Option<HashSet<String>>,
+    pub hash: Option<HashMap<String, String>>,
 }
 
 impl RedisEntry {
@@ -153,6 +183,7 @@ impl RedisEntry {
             string: Some(value.to_owned()),
             list: None,
             set: None,
+            hash: None,
         }
     }
 
@@ -162,6 +193,7 @@ impl RedisEntry {
             string: None,
             list: Some(LinkedList::new()),
             set: None,
+            hash: None,
         }
     }
 
@@ -171,6 +203,17 @@ impl RedisEntry {
             string: None,
             list: None,
             set: Some(HashSet::new()),
+            hash: None,
+        }
+    }
+
+    pub fn init_hash() -> Self {
+        RedisEntry {
+            type_: RedisEntryType::Set,
+            string: None,
+            list: None,
+            set: None,
+            hash: Some(HashMap::new()),
         }
     }
 }
