@@ -88,19 +88,30 @@ mod test {
 
         #[test]
         fn should_insert_value() {
-            let key = "foo".to_string();
-            let cmd =
-                HSetCommand::new(vec![key.clone(), "bar".to_string(), "baz".to_string()]).unwrap();
             let mut ds = DataStore::new();
+            let key = "foo".to_string();
+            let cmd = HSetCommand::new(vec![
+                key.clone(),
+                "k1".to_string(),
+                "v1".to_string(),
+                "k2".to_string(),
+                "v2".to_string(),
+            ])
+            .unwrap();
             let result = cmd.execute(&mut ds);
-            assert_eq!(result.unwrap().to_string(), "1".to_string());
+            assert_eq!(result.unwrap().to_string(), "2".to_string());
             let hash = ds.get_hash_mut(&key).unwrap().unwrap();
-            assert_eq!(hash.len(), 1);
-            assert_eq!(hash.get(&"bar".to_string()).unwrap(), &"baz".to_string());
+            assert_eq!(hash.len(), 2);
+            assert_eq!(hash.get(&"k1".to_string()).unwrap(), &"v1".to_string());
+            assert_eq!(hash.get(&"k2".to_string()).unwrap(), &"v2".to_string());
 
             // Should return 0 because key "bar" already exists
+            let cmd =
+                HSetCommand::new(vec![key.clone(), "k1".to_string(), "v3".to_string()]).unwrap();
             let result = cmd.execute(&mut ds);
             assert_eq!(result.unwrap().to_string(), "0".to_string());
+            let hash = ds.get_hash_mut(&key).unwrap().unwrap();
+            assert_eq!(hash.get(&"k1".to_string()).unwrap(), &"v3".to_string());
         }
     }
 }
