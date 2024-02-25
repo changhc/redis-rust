@@ -46,7 +46,7 @@ const STRING_COMMANDS: &[&str] = &[
 ];
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
 const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers", "sismember", "scard", "sdiff"];
-const HASH_COMMANDS: &[&str] = &["set"];
+const HASH_COMMANDS: &[&str] = &["hset"];
 
 impl FromStr for CommandType {
     type Err = ();
