@@ -29,11 +29,16 @@ pub enum SetCommandType {
     Diff,
 }
 
+pub enum HashCommandType {
+    Set,
+}
+
 pub enum CommandType {
     Ping,
     String(StringCommandType),
     List(ListCommandType),
     Set(SetCommandType),
+    Hash(HashCommandType),
 }
 
 const STRING_COMMANDS: &[&str] = &[
@@ -41,6 +46,7 @@ const STRING_COMMANDS: &[&str] = &[
 ];
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
 const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers", "sismember", "scard", "sdiff"];
+const HASH_COMMANDS: &[&str] = &["hset"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -53,6 +59,7 @@ impl FromStr for CommandType {
             }
             s if LIST_COMMANDS.contains(&s) => Ok(CommandType::List(ListCommandType::from_str(s)?)),
             s if SET_COMMANDS.contains(&s) => Ok(CommandType::Set(SetCommandType::from_str(s)?)),
+            s if HASH_COMMANDS.contains(&s) => Ok(CommandType::Hash(HashCommandType::from_str(s)?)),
             _ => Err(()),
         }
     }
@@ -103,6 +110,17 @@ impl FromStr for SetCommandType {
             "sismember" => Ok(SetCommandType::IsMember),
             "scard" => Ok(SetCommandType::Card),
             "sdiff" => Ok(SetCommandType::Diff),
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for HashCommandType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<HashCommandType, Self::Err> {
+        match s {
+            "hset" => Ok(HashCommandType::Set),
             _ => Err(()),
         }
     }

@@ -5,10 +5,9 @@ pub use base::Command;
 use ping::PingCommand;
 mod types;
 use std::str::FromStr;
-use types::{CommandType, ListCommandType, StringCommandType};
+use types::{CommandType, HashCommandType, ListCommandType, SetCommandType, StringCommandType};
 
-use self::types::SetCommandType;
-
+mod hash;
 mod list;
 mod set;
 mod string;
@@ -30,6 +29,7 @@ impl CommandFactory {
                 CommandType::String(v) => handle_string_command(v, body),
                 CommandType::List(v) => handle_list_command(v, body),
                 CommandType::Set(v) => handle_set_command(v, body),
+                CommandType::Hash(v) => handle_hash_command(v, body),
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),
         }
@@ -150,6 +150,18 @@ fn handle_set_command(
             Err(e) => Err(e),
         },
         SetCommandType::Diff => match set::SDiffCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
+    }
+}
+
+fn handle_hash_command(
+    v: HashCommandType,
+    body: Vec<String>,
+) -> Result<Box<dyn Command>, RequestError> {
+    match v {
+        HashCommandType::Set => match hash::HSetCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
