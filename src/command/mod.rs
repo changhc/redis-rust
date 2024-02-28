@@ -165,5 +165,9 @@ fn handle_hash_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        HashCommandType::Get => match hash::HGetCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
