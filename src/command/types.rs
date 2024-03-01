@@ -32,6 +32,7 @@ pub enum SetCommandType {
 pub enum HashCommandType {
     Set,
     Get,
+    GetAll,
 }
 
 pub enum CommandType {
@@ -47,7 +48,7 @@ const STRING_COMMANDS: &[&str] = &[
 ];
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
 const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers", "sismember", "scard", "sdiff"];
-const HASH_COMMANDS: &[&str] = &["hset", "hget"];
+const HASH_COMMANDS: &[&str] = &["hset", "hget", "hgetall"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -123,6 +124,7 @@ impl FromStr for HashCommandType {
         match s {
             "hset" => Ok(HashCommandType::Set),
             "hget" => Ok(HashCommandType::Get),
+            "hgetall" => Ok(HashCommandType::GetAll),
             _ => Err(()),
         }
     }
