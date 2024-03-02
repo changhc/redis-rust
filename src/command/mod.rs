@@ -169,5 +169,9 @@ fn handle_hash_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        HashCommandType::GetAll => match hash::HGetAllCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
