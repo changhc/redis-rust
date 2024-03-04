@@ -32,26 +32,21 @@ impl Command for HSetCommand {
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
         // TODO: atomicity
-        match data_store.get_hash_mut(&self.key) {
-            Ok(hash_op) => {
-                let hash = match hash_op {
-                    Some(hash) => hash,
-                    None => {
-                        let _ = data_store.insert_hash(&self.key);
-                        data_store.get_hash_mut(&self.key).unwrap().unwrap()
-                    }
-                };
-                let mut count = 0;
-                for (key, value) in &self.values {
-                    count += match hash.insert(key.clone(), value.clone()) {
-                        Some(_) => 0,
-                        None => 1,
-                    }
-                }
-                Ok(Box::new(HSetResult { value: count }))
+        let hash = match data_store.get_hash_mut(&self.key)? {
+            Some(hash) => hash,
+            None => {
+                let _ = data_store.insert_hash(&self.key);
+                data_store.get_hash_mut(&self.key).unwrap().unwrap()
             }
-            Err(e) => Err(e),
+        };
+        let mut count = 0;
+        for (key, value) in &self.values {
+            count += match hash.insert(key.clone(), value.clone()) {
+                Some(_) => 0,
+                None => 1,
+            }
         }
+        Ok(Box::new(HSetResult { value: count }))
     }
 }
 

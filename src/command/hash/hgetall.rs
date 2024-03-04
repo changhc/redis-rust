@@ -24,18 +24,16 @@ impl Command for HGetAllCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_hash_mut(&self.key) {
-            Ok(hash_op) => Ok(Box::new(HGetAllResult {
-                values: match hash_op {
-                    Some(hash) => hash
-                        .iter()
-                        .flat_map(|(k, v)| vec![k.clone(), v.clone()])
-                        .collect(),
-                    None => vec![],
-                },
-            })),
-            Err(e) => Err(e),
-        }
+        let hash_op = data_store.get_hash_mut(&self.key)?;
+        Ok(Box::new(HGetAllResult {
+            values: match hash_op {
+                Some(hash) => hash
+                    .iter()
+                    .flat_map(|(k, v)| vec![k.clone(), v.clone()])
+                    .collect(),
+                None => vec![],
+            },
+        }))
     }
 }
 
