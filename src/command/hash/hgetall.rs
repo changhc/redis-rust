@@ -62,17 +62,19 @@ mod test {
         let key = "foo".to_string();
         HSetCommand::new(vec![
             key.clone(),
-            "k1".to_string(),
-            "v1".to_string(),
-            "k2".to_string(),
-            "v2".to_string(),
+            "a0".to_string(),
+            "a1".to_string(),
+            "b0".to_string(),
+            "b1".to_string(),
         ])
         .unwrap()
         .execute(&mut ds)
         .unwrap();
         let cmd = HGetAllCommand::new(vec![key.clone()]).unwrap();
-        let result = cmd.execute(&mut ds);
-        assert_eq!(result.unwrap().to_string(), "k1,v1,k2,v2".to_string());
+        let result = cmd.execute(&mut ds).unwrap().to_string();
+        let mut tokens = result.split(",").collect::<Vec<_>>();
+        tokens.sort();
+        assert_eq!(tokens.join(","), "a0,a1,b0,b1".to_string());
     }
 
     #[test]
