@@ -62,19 +62,39 @@ mod test {
         let key = "foo".to_string();
         HSetCommand::new(vec![
             key.clone(),
-            "a0".to_string(),
-            "a1".to_string(),
-            "b0".to_string(),
-            "b1".to_string(),
+            "k1".to_string(),
+            "v1".to_string(),
+            "k2".to_string(),
+            "v2".to_string(),
         ])
         .unwrap()
         .execute(&mut ds)
         .unwrap();
         let cmd = HGetAllCommand::new(vec![key.clone()]).unwrap();
         let result = cmd.execute(&mut ds).unwrap().to_string();
-        let mut tokens = result.split(",").collect::<Vec<_>>();
-        tokens.sort();
-        assert_eq!(tokens.join(","), "a0,a1,b0,b1".to_string());
+        let tokens = result.split(',').collect::<Vec<_>>();
+
+        // Since key-value pairs might not be returned in the order that they were inserted,
+        // we check the pairs by first locating the keys and then examining the next element.
+        let mut k1_idx = tokens.len();
+        for (i, token) in tokens.iter().enumerate() {
+            if token == &"k1" {
+                k1_idx = i;
+                break;
+            }
+        }
+        assert_ne!(k1_idx, tokens.len());
+        assert_eq!(tokens[k1_idx + 1], "v1".to_string());
+
+        let mut k2_idx = tokens.len();
+        for (i, token) in tokens.iter().enumerate() {
+            if token == &"k2" {
+                k2_idx = i;
+                break;
+            }
+        }
+        assert_ne!(k2_idx, tokens.len());
+        assert_eq!(tokens[k2_idx + 1], "v2".to_string());
     }
 
     #[test]
