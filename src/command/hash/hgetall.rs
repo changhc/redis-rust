@@ -24,18 +24,16 @@ impl Command for HGetAllCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_hash_mut(&self.key) {
-            Ok(hash_op) => Ok(Box::new(HGetAllResult {
-                values: match hash_op {
-                    Some(hash) => hash
-                        .iter()
-                        .flat_map(|(k, v)| vec![k.clone(), v.clone()])
-                        .collect(),
-                    None => vec![],
-                },
-            })),
-            Err(e) => Err(e),
-        }
+        let hash_op = data_store.get_hash_mut(&self.key)?;
+        Ok(Box::new(HGetAllResult {
+            values: match hash_op {
+                Some(hash) => hash
+                    .iter()
+                    .flat_map(|(k, v)| vec![k.clone(), v.clone()])
+                    .collect(),
+                None => vec![],
+            },
+        }))
     }
 }
 
@@ -73,8 +71,30 @@ mod test {
         .execute(&mut ds)
         .unwrap();
         let cmd = HGetAllCommand::new(vec![key.clone()]).unwrap();
-        let result = cmd.execute(&mut ds);
-        assert_eq!(result.unwrap().to_string(), "k1,v1,k2,v2".to_string());
+        let result = cmd.execute(&mut ds).unwrap().to_string();
+        let tokens = result.split(',').collect::<Vec<_>>();
+
+        // Since key-value pairs might not be returned in the order that they were inserted,
+        // we check the pairs by first locating the keys and then examining the next element.
+        let mut k1_idx = tokens.len();
+        for (i, token) in tokens.iter().enumerate() {
+            if token == &"k1" {
+                k1_idx = i;
+                break;
+            }
+        }
+        assert_ne!(k1_idx, tokens.len());
+        assert_eq!(tokens[k1_idx + 1], "v1".to_string());
+
+        let mut k2_idx = tokens.len();
+        for (i, token) in tokens.iter().enumerate() {
+            if token == &"k2" {
+                k2_idx = i;
+                break;
+            }
+        }
+        assert_ne!(k2_idx, tokens.len());
+        assert_eq!(tokens[k2_idx + 1], "v2".to_string());
     }
 
     #[test]

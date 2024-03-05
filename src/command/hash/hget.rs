@@ -26,15 +26,13 @@ impl Command for HGetCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_hash_mut(&self.key) {
-            Ok(hash_op) => Ok(Box::new(HGetResult {
-                value: match hash_op {
-                    Some(hash) => hash.get(&self.field).cloned(),
-                    None => None,
-                },
-            })),
-            Err(e) => Err(e),
-        }
+        let hash_op = data_store.get_hash_mut(&self.key)?;
+        Ok(Box::new(HGetResult {
+            value: match hash_op {
+                Some(hash) => hash.get(&self.field).cloned(),
+                None => None,
+            },
+        }))
     }
 }
 
