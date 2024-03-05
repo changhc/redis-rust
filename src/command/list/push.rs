@@ -33,25 +33,20 @@ impl Command for PushCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_list_mut(&self.key) {
-            Ok(list_op) => {
-                let list = match list_op {
-                    Some(list) => list,
-                    None => {
-                        let _ = data_store.insert_list(&self.key);
-                        data_store.get_list_mut(&self.key).unwrap().unwrap()
-                    }
-                };
-                for value in &self.values {
-                    match &self.direction {
-                        OperationDirection::Left => list.push_front(value.clone()),
-                        OperationDirection::Right => list.push_back(value.clone()),
-                    };
-                }
-                Ok(Box::new(PushResult { value: list.len() }))
+        let list = match data_store.get_list_mut(&self.key)? {
+            Some(list) => list,
+            None => {
+                let _ = data_store.insert_list(&self.key);
+                data_store.get_list_mut(&self.key).unwrap().unwrap()
             }
-            Err(e) => Err(e),
+        };
+        for value in &self.values {
+            match &self.direction {
+                OperationDirection::Left => list.push_front(value.clone()),
+                OperationDirection::Right => list.push_back(value.clone()),
+            };
         }
+        Ok(Box::new(PushResult { value: list.len() }))
     }
 }
 

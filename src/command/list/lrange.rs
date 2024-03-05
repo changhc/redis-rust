@@ -35,30 +35,27 @@ impl Command for LRangeCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_list_mut(&self.key) {
-            Ok(list_op) => match list_op {
-                Some(list) => {
-                    let mut values = Vec::new();
-                    let start = if self.start >= 0 {
-                        self.start
-                    } else {
-                        list.len() as i64 + self.start
-                    };
-                    let stop = if self.stop >= 0 {
-                        self.stop
-                    } else {
-                        list.len() as i64 + self.stop
-                    };
-                    for (idx, item) in list.iter().enumerate() {
-                        if idx as i64 >= start && idx as i64 <= stop {
-                            values.push(item.clone());
-                        }
+        match data_store.get_list_mut(&self.key)? {
+            Some(list) => {
+                let mut values = Vec::new();
+                let start = if self.start >= 0 {
+                    self.start
+                } else {
+                    list.len() as i64 + self.start
+                };
+                let stop = if self.stop >= 0 {
+                    self.stop
+                } else {
+                    list.len() as i64 + self.stop
+                };
+                for (idx, item) in list.iter().enumerate() {
+                    if idx as i64 >= start && idx as i64 <= stop {
+                        values.push(item.clone());
                     }
-                    Ok(Box::new(LRangeResult { values }))
                 }
-                None => Ok(Box::new(LRangeResult { values: Vec::new() })),
-            },
-            Err(e) => Err(e),
+                Ok(Box::new(LRangeResult { values }))
+            }
+            None => Ok(Box::new(LRangeResult { values: Vec::new() })),
         }
     }
 }
