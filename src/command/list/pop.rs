@@ -41,34 +41,29 @@ impl Command for PopCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_list_mut(&self.key) {
-            Ok(list_op) => {
-                let values = match list_op {
-                    Some(list) => {
-                        let mut values = Vec::new();
-                        for _ in 0..self.count {
-                            let pop_result = match &self.direction {
-                                OperationDirection::Left => list.pop_front(),
-                                OperationDirection::Right => list.pop_back(),
-                            };
-                            match pop_result {
-                                Some(v) => values.push(v),
-                                None => break,
-                            };
-                        }
+        let values = match data_store.get_list_mut(&self.key)? {
+            Some(list) => {
+                let mut values = Vec::new();
+                for _ in 0..self.count {
+                    let pop_result = match &self.direction {
+                        OperationDirection::Left => list.pop_front(),
+                        OperationDirection::Right => list.pop_back(),
+                    };
+                    match pop_result {
+                        Some(v) => values.push(v),
+                        None => break,
+                    };
+                }
 
-                        let len = list.len();
-                        if len == 0 {
-                            data_store.drop_key(&self.key);
-                        }
-                        values
-                    }
-                    None => Vec::new(),
-                };
-                Ok(Box::new(PopResult { values }))
+                let len = list.len();
+                if len == 0 {
+                    data_store.drop_key(&self.key);
+                }
+                values
             }
-            Err(e) => Err(e),
-        }
+            None => Vec::new(),
+        };
+        Ok(Box::new(PopResult { values }))
     }
 }
 

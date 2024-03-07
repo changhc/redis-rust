@@ -25,13 +25,12 @@ impl Command for LLenCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_list_mut(&self.key) {
-            Ok(list_op) => match list_op {
-                Some(list) => Ok(Box::new(LLenResult { value: list.len() })),
-                None => Ok(Box::new(LLenResult { value: 0 })),
+        Ok(Box::new(LLenResult {
+            value: match data_store.get_list_mut(&self.key)? {
+                Some(list) => list.len(),
+                None => 0,
             },
-            Err(e) => Err(e),
-        }
+        }))
     }
 }
 
