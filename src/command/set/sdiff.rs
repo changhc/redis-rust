@@ -25,34 +25,24 @@ impl Command for SDiffCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_set_mut(&self.keys[0]) {
-            Ok(set_op) => {
-                let values = match set_op {
-                    Some(set) => {
-                        let mut result: HashSet<String> = set.iter().cloned().collect();
-                        for key in &self.keys[1..] {
-                            match data_store.get_set_mut(key) {
-                                Ok(right_set_op) => {
-                                    if let Some(right_set) = right_set_op {
-                                        for v in right_set.iter() {
-                                            result.remove(v);
-                                        }
-                                    }
-                                }
-                                Err(e) => return Err(e),
-                            }
+        let values = match data_store.get_set_mut(&self.keys[0])? {
+            Some(set) => {
+                let mut result: HashSet<String> = set.iter().cloned().collect();
+                for key in &self.keys[1..] {
+                    if let Some(right_set) = data_store.get_set_mut(key)? {
+                        for v in right_set.iter() {
+                            result.remove(v);
                         }
-                        result
                     }
-                    None => HashSet::<String>::new(),
                 }
-                .iter()
-                .cloned()
-                .collect::<Vec<String>>();
-                Ok(Box::new(SDiffResult { values }))
+                result
             }
-            Err(e) => Err(e),
+            None => HashSet::<String>::new(),
         }
+        .iter()
+        .cloned()
+        .collect::<Vec<String>>();
+        Ok(Box::new(SDiffResult { values }))
     }
 }
 

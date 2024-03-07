@@ -25,16 +25,11 @@ impl Command for SCardCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_set_mut(&self.key) {
-            Ok(set_op) => {
-                let count = match set_op {
-                    Some(set) => set.len(),
-                    None => 0,
-                };
-                Ok(Box::new(SCardResult { value: count }))
-            }
-            Err(e) => Err(e),
-        }
+        let count = match data_store.get_set_mut(&self.key)? {
+            Some(set) => set.len(),
+            None => 0,
+        };
+        Ok(Box::new(SCardResult { value: count }))
     }
 }
 

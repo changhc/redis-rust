@@ -25,18 +25,13 @@ impl Command for SMembersCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_set_mut(&self.key) {
-            Ok(set_op) => {
-                let mut values = vec![];
-                if let Some(set) = set_op {
-                    for v in set.iter() {
-                        values.push(v.to_owned());
-                    }
-                }
-                Ok(Box::new(SMembersResult { values }))
+        let mut values = vec![];
+        if let Some(set) = data_store.get_set_mut(&self.key)? {
+            for v in set.iter() {
+                values.push(v.to_owned());
             }
-            Err(e) => Err(e),
         }
+        Ok(Box::new(SMembersResult { values }))
     }
 }
 
