@@ -33,23 +33,18 @@ impl Command for SAddCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_set_mut(&self.key) {
-            Ok(set_op) => {
-                let set = match set_op {
-                    Some(set) => set,
-                    None => {
-                        let _ = data_store.insert_set(&self.key);
-                        data_store.get_set_mut(&self.key).unwrap().unwrap()
-                    }
-                };
-                let mut count = 0;
-                for value in &self.values {
-                    count += set.insert(value.clone()) as usize;
-                }
-                Ok(Box::new(SAddResult { value: count }))
+        let set = match data_store.get_set_mut(&self.key)? {
+            Some(set) => set,
+            None => {
+                let _ = data_store.insert_set(&self.key);
+                data_store.get_set_mut(&self.key).unwrap().unwrap()
             }
-            Err(e) => Err(e),
+        };
+        let mut count = 0;
+        for value in &self.values {
+            count += set.insert(value.clone()) as usize;
         }
+        Ok(Box::new(SAddResult { value: count }))
     }
 }
 

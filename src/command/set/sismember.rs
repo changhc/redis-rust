@@ -27,19 +27,14 @@ impl Command for SIsmemberCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_set_mut(&self.key) {
-            Ok(set_op) => {
-                let count = match set_op {
-                    Some(set) => match set.contains(&self.value) {
-                        true => 1,
-                        _ => 0,
-                    },
-                    None => 0,
-                };
-                Ok(Box::new(SIsmemberResult { value: count }))
-            }
-            Err(e) => Err(e),
-        }
+        let count = match data_store.get_set_mut(&self.key)? {
+            Some(set) => match set.contains(&self.value) {
+                true => 1,
+                _ => 0,
+            },
+            None => 0,
+        };
+        Ok(Box::new(SIsmemberResult { value: count }))
     }
 }
 

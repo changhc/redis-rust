@@ -33,22 +33,17 @@ impl Command for SRemCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_set_mut(&self.key) {
-            Ok(set_op) => {
-                let count = match set_op {
-                    Some(set) => {
-                        let mut count = 0;
-                        for value in &self.values {
-                            count += set.remove(value) as usize;
-                        }
-                        count
-                    }
-                    None => 0,
-                };
-                Ok(Box::new(SRemResult { value: count }))
+        let count = match data_store.get_set_mut(&self.key)? {
+            Some(set) => {
+                let mut count = 0;
+                for value in &self.values {
+                    count += set.remove(value) as usize;
+                }
+                count
             }
-            Err(e) => Err(e),
-        }
+            None => 0,
+        };
+        Ok(Box::new(SRemResult { value: count }))
     }
 }
 
