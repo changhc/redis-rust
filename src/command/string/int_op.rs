@@ -14,12 +14,9 @@ fn _execute(
     data_store: &mut DataStore,
 ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
     let default = "0".to_string();
-    let curr_value = match data_store.get_string(key) {
-        Ok(op) => match op {
-            Some(v) => v,
-            None => &default,
-        },
-        Err(e) => return Err(e),
+    let curr_value = match data_store.get_string(key)? {
+        Some(v) => v,
+        None => &default,
     };
     match curr_value.parse::<i64>() {
         Ok(v) => match v.checked_add(value) {
