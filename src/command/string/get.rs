@@ -25,10 +25,10 @@ impl Command for GetCommand {
         &self,
         data_store: &mut DataStore,
     ) -> Result<Box<dyn ExecutionResult>, Box<dyn std::error::Error>> {
-        match data_store.get_string(&self.key) {
-            Ok(v) => Ok(Box::new(GetResult { value: v.cloned() })),
-            Err(e) => Err(e),
-        }
+        let value = data_store.get_string(&self.key)?;
+        Ok(Box::new(GetResult {
+            value: value.cloned(),
+        }))
     }
 }
 
