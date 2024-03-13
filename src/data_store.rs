@@ -1,5 +1,6 @@
 use crate::error::{ExecutionError, InternalError};
 use std::collections::{HashMap, HashSet, LinkedList};
+use std::fmt::{Display, Formatter};
 
 pub struct DataStore {
     ds: HashMap<String, RedisEntry>,
@@ -140,16 +141,10 @@ impl DataStore {
         key: &String,
         expected_type: RedisEntryType,
     ) -> Box<dyn std::error::Error> {
-        let type_name = match expected_type {
-            RedisEntryType::String => "String",
-            RedisEntryType::List => "List",
-            RedisEntryType::Set => "Set",
-            RedisEntryType::Hash => "Hash",
-        };
         log::error!(
             "Integration error at key '{}': expecting type '{}' but data is not found",
             key,
-            type_name
+            expected_type.to_string()
         );
         Box::new(InternalError::Error)
     }
@@ -161,13 +156,23 @@ impl Default for DataStore {
     }
 }
 
+#[derive(Default, Debug)]
 pub enum RedisEntryType {
+    #[default]
+    Unknown,
     String,
     List,
     Set,
     Hash,
 }
 
+impl Display for RedisEntryType {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Default)]
 pub struct RedisEntry {
     pub type_: RedisEntryType,
     pub string: Option<String>,
@@ -181,39 +186,31 @@ impl RedisEntry {
         RedisEntry {
             type_: RedisEntryType::String,
             string: Some(value.to_owned()),
-            list: None,
-            set: None,
-            hash: None,
+            ..Default::default()
         }
     }
 
     pub fn init_list() -> Self {
         RedisEntry {
             type_: RedisEntryType::List,
-            string: None,
             list: Some(LinkedList::new()),
-            set: None,
-            hash: None,
+            ..Default::default()
         }
     }
 
     pub fn init_set() -> Self {
         RedisEntry {
             type_: RedisEntryType::Set,
-            string: None,
-            list: None,
             set: Some(HashSet::new()),
-            hash: None,
+            ..Default::default()
         }
     }
 
     pub fn init_hash() -> Self {
         RedisEntry {
             type_: RedisEntryType::Hash,
-            string: None,
-            list: None,
-            set: None,
             hash: Some(HashMap::new()),
+            ..Default::default()
         }
     }
 }
