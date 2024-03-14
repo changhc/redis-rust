@@ -24,7 +24,7 @@ fn _execute(
                 let _ = data_store.set_string(key, &updated.to_string());
                 Ok(Box::new(IntOpResult { value: updated }))
             }
-            None => Err(Box::new(IncrCommandError::InvalidValue)),
+            None => Err(Box::new(IncrCommandError::ResultOverflow)),
         },
         Err(_) => Err(Box::new(IncrCommandError::InvalidValue)),
     }
@@ -162,7 +162,10 @@ mod test {
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MAX.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
-            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
+            assert_eq!(
+                err.to_string(),
+                IncrCommandError::ResultOverflow.to_string()
+            )
         }
 
         #[test]
@@ -172,15 +175,18 @@ mod test {
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MIN.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
-            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
+            assert_eq!(
+                err.to_string(),
+                IncrCommandError::ResultOverflow.to_string()
+            )
         }
     }
     mod test_incrby {
         use super::super::IncrbyCommand;
+        use crate::command::string::NumOperator;
         use crate::command::Command;
         use crate::data_store::DataStore;
-        use crate::error::RequestError;
-        use crate::{command::string::NumOperator, error::IncrCommandError};
+        use crate::error::{IncrCommandError, RequestError};
 
         #[test]
         fn should_accept_exactly_two_tokens() {
@@ -217,7 +223,10 @@ mod test {
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MAX.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
-            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
+            assert_eq!(
+                err.to_string(),
+                IncrCommandError::ResultOverflow.to_string()
+            )
         }
 
         #[test]
@@ -228,7 +237,10 @@ mod test {
             let mut ds = DataStore::new();
             ds.set_string_overwrite(&key, &i64::MIN.to_string());
             let err = cmd.execute(&mut ds).err().unwrap();
-            assert_eq!(err.to_string(), IncrCommandError::InvalidValue.to_string())
+            assert_eq!(
+                err.to_string(),
+                IncrCommandError::ResultOverflow.to_string()
+            )
         }
     }
 }

@@ -38,4 +38,12 @@ pub enum InternalError {
 pub enum IncrCommandError {
     #[error("value is not an integer or out of range")]
     InvalidValue,
+    #[error("increment or decrement would overflow")]
+    ResultOverflow,
+}
+
+#[derive(Error, Debug)]
+pub enum HIncrByCommandError {
+    #[error("hash value is not an integer")]
+    InvalidHashValue,
 }
