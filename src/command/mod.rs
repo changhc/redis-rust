@@ -173,5 +173,9 @@ fn handle_hash_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        HashCommandType::IncrBy => match hash::HIncrByCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
