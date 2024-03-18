@@ -152,7 +152,7 @@ impl SkipList {
 #[cfg(test)]
 mod test {
     mod test_listnode {
-        use crate::data_store_helper::sorted_set::ListNode;
+        use crate::data_store::sorted_set::ListNode;
         use std::cell::RefCell;
 
         #[test]
@@ -183,7 +183,7 @@ mod test {
     }
 
     mod test_skiplist {
-        use crate::data_store_helper::sorted_set::SkipList;
+        use crate::data_store::sorted_set::SkipList;
 
         #[test]
         fn should_insert_node() {

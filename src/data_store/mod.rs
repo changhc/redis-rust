@@ -1,6 +1,9 @@
+mod sorted_set;
+
 use crate::error::{ExecutionError, InternalError};
 use std::collections::{HashMap, HashSet, LinkedList};
 use std::fmt::{Display, Formatter};
+use sorted_set::SkipList;
 
 pub struct DataStore {
     ds: HashMap<String, RedisEntry>,
