@@ -1,6 +1,5 @@
 use rand::Rng;
 use std::cell::RefCell;
-use std::collections::btree_set::Iter;
 use std::collections::{BTreeSet, HashMap};
 
 const SKIP_LIST_MAX_LEVEL: u8 = 31;
@@ -9,7 +8,7 @@ const SKIP_LIST_PROB: f64 = 0.5;
 struct ListNode {
     id: u64,
     level: u8,
-    pub next: HashMap<u8, u64>,
+    next: HashMap<u8, u64>,
     score: f64,
     values: BTreeSet<String>,
 }
@@ -31,10 +30,6 @@ impl ListNode {
 
     pub fn add_value(&mut self, value: String) {
         self.values.insert(value);
-    }
-
-    fn get_values(&self) -> Iter<String> {
-        self.values.iter()
     }
 
     pub fn set_next(&mut self, level: u8, node: &RefCell<ListNode>) {
@@ -62,16 +57,17 @@ impl Default for SkipList {
 
 impl SkipList {
     pub fn new() -> Self {
-        let head_node = RefCell::new(ListNode::new(0, SKIP_LIST_MAX_LEVEL, f64::MIN));
+        let max_level = SKIP_LIST_MAX_LEVEL;
+        let head_node = RefCell::new(ListNode::new(0, max_level, f64::MIN));
         let head_id = head_node.borrow().id;
-        let tail_node = RefCell::new(ListNode::new(1, SKIP_LIST_MAX_LEVEL, f64::MAX));
+        let tail_node = RefCell::new(ListNode::new(1, max_level, f64::MAX));
         let tail_id = tail_node.borrow().id;
-        for level in 0..=SKIP_LIST_MAX_LEVEL {
+        for level in 0..=max_level {
             head_node.borrow_mut().set_next(level, &tail_node);
         }
         let nodes = HashMap::from([(head_id, head_node), (tail_id, tail_node)]);
         SkipList {
-            max_level: SKIP_LIST_MAX_LEVEL,
+            max_level,
             prob: SKIP_LIST_PROB,
             list: 0,
             nodes,
@@ -80,8 +76,8 @@ impl SkipList {
     }
 
     fn should_insert(&self, score: f64, value: &String) -> Option<Vec<(u8, u64)>> {
-        let mut level: i16 = SKIP_LIST_MAX_LEVEL as i16;
-        let mut node_id = 0;
+        let mut level: i16 = self.max_level as i16;
+        let mut node_id = self.list;
         let mut prev = Vec::<(u8, u64)>::new();
         while level >= 0 {
             let node = self.nodes.get(&node_id).unwrap();
@@ -165,8 +161,8 @@ mod test {
             n0.borrow_mut().add_value("a".to_string());
             n0.borrow_mut().add_value("aa".to_string());
             assert_eq!(
-                n0.borrow().get_values().collect::<Vec<_>>(),
-                vec![
+                n0.borrow().values.iter().collect::<Vec<_>>(),
+                [
                     &"a".to_string(),
                     &"aa".to_string(),
                     &"b".to_string(),
@@ -188,7 +184,7 @@ mod test {
             list.insert(1.0, "foobar".to_string());
             let mut nodes = list.nodes.values().collect::<Vec<_>>();
             nodes.sort_by(|a, b| a.borrow().id.cmp(&b.borrow().id));
-            let expected = vec![
+            let expected = [
                 (f64::MIN, vec![]),
                 (f64::MAX, vec![]),
                 (1.0, vec!["foo", "foobar"]),
@@ -198,7 +194,7 @@ mod test {
             for i in 0..5 {
                 assert_eq!(nodes[i].borrow().score, expected[i].0);
                 assert_eq!(
-                    nodes[i].borrow().get_values().collect::<Vec<_>>(),
+                    nodes[i].borrow().values.iter().collect::<Vec<_>>(),
                     expected[i].1
                 );
             }
