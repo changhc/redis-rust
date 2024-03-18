@@ -2,7 +2,7 @@ use rand::Rng;
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap};
 
-const SKIP_LIST_MAX_LEVEL: u8 = 31;
+const SKIP_LIST_MAX_LEVEL: u8 = 32;
 const SKIP_LIST_PROB: f64 = 0.5;
 
 struct ListNode {
