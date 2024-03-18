@@ -44,7 +44,7 @@ impl ListNode {
 pub struct SkipList {
     max_level: u8,
     prob: f64,
-    list: u64,
+    head_id: u64,
     nodes: HashMap<u64, RefCell<ListNode>>,
     next_node_id: u64,
 }
@@ -69,7 +69,7 @@ impl SkipList {
         SkipList {
             max_level,
             prob: SKIP_LIST_PROB,
-            list: 0,
+            head_id,
             nodes,
             next_node_id: 2,
         }
@@ -77,26 +77,26 @@ impl SkipList {
 
     fn should_insert(&self, score: f64, value: &String) -> Option<Vec<(u8, u64)>> {
         let mut level: i16 = self.max_level as i16;
-        let mut node_id = self.list;
-        let mut prev = Vec::<(u8, u64)>::new();
+        let mut current_node_id = self.head_id;
+        // List of the immediate previous node per level. (level, node_id)
+        let mut previous_nodes = Vec::<(u8, u64)>::new();
         while level >= 0 {
-            let node = self.nodes.get(&node_id).unwrap();
-            let node_score = node.borrow().score;
-            let next_node_id = node.borrow().get_next(level as u8).unwrap();
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_node_score = current_node.borrow().score;
+            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
             let next_node = self.nodes.get(&next_node_id).unwrap();
             let next_node_score = next_node.borrow().score;
-            println!("{}, {}, {}, {}", score, node_score, next_node_score, value);
-            if score == node_score {
-                node.borrow_mut().add_value(value.clone());
+            if score == current_node_score {
+                current_node.borrow_mut().add_value(value.clone());
                 return None;
             } else if score >= next_node_score {
-                node_id = next_node_id;
+                current_node_id = next_node_id;
             } else {
-                prev.push((level as u8, node.borrow().id));
+                previous_nodes.push((level as u8, current_node.borrow().id));
                 level -= 1;
             }
         }
-        Some(prev)
+        Some(previous_nodes)
     }
 
     fn insert_node_to_level(
@@ -128,18 +128,18 @@ impl SkipList {
         if prev_op.is_none() {
             return;
         }
-        let mut prev = prev_op.unwrap();
+        let mut previous_nodes = prev_op.unwrap();
 
         let new_node_id = self.create_new_node(score, value);
         let new_node = self.nodes.get(&new_node_id).unwrap();
-        let (current_level, current_node_id) = prev.pop().unwrap();
+        let (current_level, current_node_id) = previous_nodes.pop().unwrap();
         assert_eq!(current_level, 0);
         let current_node = self.nodes.get(&current_node_id).unwrap();
         self.insert_node_to_level(current_node, new_node, current_level);
 
         let mut rng = rand::thread_rng();
         while rng.gen::<f64>() > self.prob {
-            if let Some((current_level, current_node_id)) = prev.pop() {
+            if let Some((current_level, current_node_id)) = previous_nodes.pop() {
                 let current_node = self.nodes.get(&current_node_id).unwrap();
                 self.insert_node_to_level(current_node, new_node, current_level);
             } else {
