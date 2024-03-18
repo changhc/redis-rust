@@ -99,7 +99,7 @@ impl SkipList {
         Some(previous_nodes)
     }
 
-    fn insert_node_to_level(
+    fn insert_node_at_level(
         &self,
         current_node: &RefCell<ListNode>,
         new_node: &RefCell<ListNode>,
@@ -135,13 +135,13 @@ impl SkipList {
         let (current_level, current_node_id) = previous_nodes.pop().unwrap();
         assert_eq!(current_level, 0);
         let current_node = self.nodes.get(&current_node_id).unwrap();
-        self.insert_node_to_level(current_node, new_node, current_level);
+        self.insert_node_at_level(current_node, new_node, current_level);
 
         let mut rng = rand::thread_rng();
         while rng.gen::<f64>() > self.prob {
             if let Some((current_level, current_node_id)) = previous_nodes.pop() {
                 let current_node = self.nodes.get(&current_node_id).unwrap();
-                self.insert_node_to_level(current_node, new_node, current_level);
+                self.insert_node_at_level(current_node, new_node, current_level);
             } else {
                 break;
             }
@@ -246,7 +246,7 @@ mod test {
         }
 
         #[test]
-        fn should_insert_node_to_level() {
+        fn should_insert_node_at_level() {
             let mut list = SkipList::new(2);
             list.create_new_node(1.0, "a");
             list.create_new_node(3.0, "b");
@@ -255,7 +255,7 @@ mod test {
             let n1 = list.nodes.get(&3).unwrap();
             let n2 = list.nodes.get(&4).unwrap();
             n0.borrow_mut().set_next(0, n1);
-            list.insert_node_to_level(n0, n2, 0);
+            list.insert_node_at_level(n0, n2, 0);
             assert_eq!(n0.borrow().get_next(0).unwrap(), 4);
         }
     }
