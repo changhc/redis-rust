@@ -99,15 +99,28 @@ impl SkipList {
         Some(prev)
     }
 
-    fn insert_node(&self, new_node: &RefCell<ListNode>, curr_level: u8, node_id: u64) {
-        let node = self.nodes.get(&node_id).unwrap();
-        let next_next_id_op = node.borrow().get_next(curr_level);
+    fn insert_node_to_level(
+        &self,
+        current_node: &RefCell<ListNode>,
+        new_node: &RefCell<ListNode>,
+        current_level: u8,
+    ) {
+        let next_next_id_op = current_node.borrow().get_next(current_level);
         if let Some(next_next_id) = next_next_id_op {
             let next_node = self.nodes.get(&next_next_id).unwrap();
-            new_node.borrow_mut().set_next(curr_level, next_node);
+            new_node.borrow_mut().set_next(current_level, next_node);
         }
-        new_node.borrow_mut().set_level(curr_level);
-        node.borrow_mut().set_next(curr_level, new_node);
+        new_node.borrow_mut().set_level(current_level);
+        current_node.borrow_mut().set_next(current_level, new_node);
+    }
+
+    fn create_new_node(&mut self, score: f64, value: String) -> u64 {
+        let new_node_id = self.next_node_id;
+        let new_node = RefCell::new(ListNode::new(new_node_id, 0, score));
+        new_node.borrow_mut().add_value(value);
+        self.nodes.insert(new_node_id, new_node);
+        self.next_node_id += 1;
+        new_node_id
     }
 
     pub fn insert(&mut self, score: f64, value: String) {
@@ -117,21 +130,18 @@ impl SkipList {
         }
         let mut prev = prev_op.unwrap();
 
-        let new_node_id = self.next_node_id;
-        let new_node = RefCell::new(ListNode::new(new_node_id, 0, score));
-        self.nodes.insert(new_node_id, new_node);
-        self.next_node_id += 1;
-
+        let new_node_id = self.create_new_node(score, value);
         let new_node = self.nodes.get(&new_node_id).unwrap();
-        new_node.borrow_mut().add_value(value);
-        let (curr_level, node_id) = prev.pop().unwrap();
-        assert_eq!(curr_level, 0);
-        self.insert_node(new_node, curr_level, node_id);
+        let (current_level, current_node_id) = prev.pop().unwrap();
+        assert_eq!(current_level, 0);
+        let current_node = self.nodes.get(&current_node_id).unwrap();
+        self.insert_node_to_level(current_node, new_node, current_level);
 
         let mut rng = rand::thread_rng();
         while rng.gen::<f64>() > self.prob {
-            if let Some((curr_level, node_id)) = prev.pop() {
-                self.insert_node(new_node, curr_level, node_id);
+            if let Some((current_level, current_node_id)) = prev.pop() {
+                let current_node = self.nodes.get(&current_node_id).unwrap();
+                self.insert_node_to_level(current_node, new_node, current_level);
             } else {
                 break;
             }
@@ -184,6 +194,7 @@ mod test {
             list.insert(1.0, "foobar".to_string());
             let mut nodes = list.nodes.values().collect::<Vec<_>>();
             nodes.sort_by(|a, b| a.borrow().id.cmp(&b.borrow().id));
+            assert_eq!(nodes.len(), 5);
             let expected = [
                 (f64::MIN, vec![]),
                 (f64::MAX, vec![]),
@@ -191,7 +202,7 @@ mod test {
                 (3.0, vec!["bar"]),
                 (2.0, vec!["baz"]),
             ];
-            for i in 0..5 {
+            for i in 0..nodes.len() {
                 assert_eq!(nodes[i].borrow().score, expected[i].0);
                 assert_eq!(
                     nodes[i].borrow().values.iter().collect::<Vec<_>>(),
