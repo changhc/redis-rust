@@ -149,6 +149,7 @@ impl SkipList {
     }
 
     pub fn get_values(&self, start: f64, end: f64) -> Vec<String> {
+        let mut result = Vec::new();
         let mut level: i16 = self.max_level as i16;
         let mut current_node_id = self.head_id;
         while level >= 0 {
@@ -166,18 +167,16 @@ impl SkipList {
         }
         let mut current_node = self.nodes.get(&current_node_id).unwrap();
         if start > current_node.borrow().score {
-            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
+            let next_node_id = current_node.borrow().get_next(0).unwrap();
             let next_node = self.nodes.get(&next_node_id).unwrap();
             current_node = next_node;
         }
         if current_node.borrow().score > end {
-            panic!();
+            return result;
         }
 
-        let mut result = Vec::new();
         let mut curr_score = current_node.borrow().score;
         while curr_score <= end {
-            println!("{} {}", curr_score, current_node.borrow().id);
             for v in current_node.borrow().values.iter() {
                 result.push(v.to_owned());
             }
@@ -313,6 +312,10 @@ mod test {
             assert_eq!(values, ["c", "b", "e"]);
             let values = list.get_values(1.5, 3.5);
             assert_eq!(values, ["c", "b"]);
+            let values = list.get_values(1.5, 1.9);
+            assert!(values.is_empty());
+            let values = list.get_values(2.0, 1.9);
+            assert!(values.is_empty());
         }
     }
 }
