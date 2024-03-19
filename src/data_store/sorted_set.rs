@@ -172,9 +172,6 @@ impl SkipList {
             let next_node = self.nodes.get(&next_node_id).unwrap();
             current_node = next_node;
         }
-        if current_node.borrow().score > stop_score {
-            return result;
-        }
 
         let mut current_node_score = current_node.borrow().score;
         while current_node_score <= stop_score {
