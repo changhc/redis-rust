@@ -166,7 +166,8 @@ impl SkipList {
             }
         }
         let mut current_node = self.nodes.get(&current_node_id).unwrap();
-        if start_score > current_node.borrow().score {
+        let current_node_score = current_node.borrow().score;
+        if start_score > current_node_score {
             let next_node_id = current_node.borrow().get_next(0).unwrap();
             let next_node = self.nodes.get(&next_node_id).unwrap();
             current_node = next_node;
@@ -175,14 +176,14 @@ impl SkipList {
             return result;
         }
 
-        let mut current_score = current_node.borrow().score;
-        while current_score <= stop_score {
+        let mut current_node_score = current_node.borrow().score;
+        while current_node_score <= stop_score {
             for v in current_node.borrow().values.iter() {
                 result.push(v.to_owned());
             }
             let next_node_id = current_node.borrow().get_next(0).unwrap();
             current_node = self.nodes.get(&next_node_id).unwrap();
-            current_score = current_node.borrow().score;
+            current_node_score = current_node.borrow().score;
         }
         result
     }
