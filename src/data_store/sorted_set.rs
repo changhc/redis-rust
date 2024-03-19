@@ -148,7 +148,7 @@ impl SkipList {
         }
     }
 
-    pub fn get_values(&self, start: f64, end: f64) -> Vec<String> {
+    pub fn get_values(&self, start_score: f64, stop_score: f64) -> Vec<String> {
         let mut result = Vec::new();
         let mut level: i16 = self.max_level as i16;
         let mut current_node_id = self.head_id;
@@ -157,32 +157,32 @@ impl SkipList {
             let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
             let next_node = self.nodes.get(&next_node_id).unwrap();
             let next_node_score = next_node.borrow().score;
-            if start == current_node.borrow().score {
+            if start_score == current_node.borrow().score {
                 break;
-            } else if start >= next_node_score {
+            } else if start_score >= next_node_score {
                 current_node_id = next_node_id;
             } else {
                 level -= 1;
             }
         }
         let mut current_node = self.nodes.get(&current_node_id).unwrap();
-        if start > current_node.borrow().score {
+        if start_score > current_node.borrow().score {
             let next_node_id = current_node.borrow().get_next(0).unwrap();
             let next_node = self.nodes.get(&next_node_id).unwrap();
             current_node = next_node;
         }
-        if current_node.borrow().score > end {
+        if current_node.borrow().score > stop_score {
             return result;
         }
 
-        let mut curr_score = current_node.borrow().score;
-        while curr_score <= end {
+        let mut current_score = current_node.borrow().score;
+        while current_score <= stop_score {
             for v in current_node.borrow().values.iter() {
                 result.push(v.to_owned());
             }
             let next_node_id = current_node.borrow().get_next(0).unwrap();
             current_node = self.nodes.get(&next_node_id).unwrap();
-            curr_score = current_node.borrow().score;
+            current_score = current_node.borrow().score;
         }
         result
     }
