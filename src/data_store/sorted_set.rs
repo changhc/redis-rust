@@ -180,10 +180,9 @@ impl SkipList {
             for v in current_node.borrow().values.iter() {
                 result.push(v.to_owned());
             }
-            let next_node_id = current_node.borrow().get_next(0 as u8).unwrap();
-                current_node = self.nodes.get(&next_node_id).unwrap();
-                curr_score = current_node.borrow().score;
-            
+            let next_node_id = current_node.borrow().get_next(0).unwrap();
+            current_node = self.nodes.get(&next_node_id).unwrap();
+            curr_score = current_node.borrow().score;
         }
         result
     }

@@ -1,7 +1,7 @@
 mod sorted_set;
 
 use crate::error::{ExecutionError, InternalError};
-use sorted_set::SkipList;
+
 use std::collections::{HashMap, HashSet, LinkedList};
 use std::fmt::{Display, Formatter};
 
