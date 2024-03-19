@@ -147,6 +147,47 @@ impl SkipList {
             }
         }
     }
+
+    pub fn get_values(&self, start: f64, end: f64) -> Vec<String> {
+        let mut level: i16 = self.max_level as i16;
+        let mut current_node_id = self.head_id;
+        while level >= 0 {
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            let next_node_score = next_node.borrow().score;
+            if start == current_node.borrow().score {
+                break;
+            } else if start >= next_node_score {
+                current_node_id = next_node_id;
+            } else {
+                level -= 1;
+            }
+        }
+        let mut current_node = self.nodes.get(&current_node_id).unwrap();
+        if start > current_node.borrow().score {
+            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            current_node = next_node;
+        }
+        if current_node.borrow().score > end {
+            panic!();
+        }
+
+        let mut result = Vec::new();
+        let mut curr_score = current_node.borrow().score;
+        while curr_score <= end {
+            println!("{} {}", curr_score, current_node.borrow().id);
+            for v in current_node.borrow().values.iter() {
+                result.push(v.to_owned());
+            }
+            let next_node_id = current_node.borrow().get_next(0 as u8).unwrap();
+                current_node = self.nodes.get(&next_node_id).unwrap();
+                curr_score = current_node.borrow().score;
+            
+        }
+        result
+    }
 }
 
 #[cfg(test)]
@@ -257,6 +298,21 @@ mod test {
             n0.borrow_mut().set_next(0, n1);
             list.insert_node_at_level(n0, n2, 0);
             assert_eq!(n0.borrow().get_next(0).unwrap(), 4);
+        }
+
+        #[test]
+        fn should_get_all_values() {
+            let mut list = SkipList::new(2);
+            let input = [(1.0, "a"), (3.0, "b"), (2.0, "c"), (1.0, "d"), (3.9, "e")];
+            for (score, value) in input {
+                list.insert(score, value.to_string());
+            }
+            let values = list.get_values(-1.0, 4.0);
+            assert_eq!(values, ["a", "d", "c", "b", "e"]);
+            let values = list.get_values(1.5, 4.0);
+            assert_eq!(values, ["c", "b", "e"]);
+            let values = list.get_values(1.5, 3.5);
+            assert_eq!(values, ["c", "b"]);
         }
     }
 }
