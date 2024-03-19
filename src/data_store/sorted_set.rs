@@ -58,9 +58,9 @@ impl Default for SkipList {
 impl SkipList {
     pub fn new(level: u8) -> Self {
         let max_level = level;
-        let head_node = RefCell::new(ListNode::new(0, max_level, f64::MIN));
+        let head_node = RefCell::new(ListNode::new(0, max_level, -f64::INFINITY));
         let head_id = head_node.borrow().id;
-        let tail_node = RefCell::new(ListNode::new(1, max_level, f64::MAX));
+        let tail_node = RefCell::new(ListNode::new(1, max_level, f64::INFINITY));
         let tail_id = tail_node.borrow().id;
         for level in 0..=max_level {
             head_node.borrow_mut().set_next(level, &tail_node);
@@ -83,13 +83,18 @@ impl SkipList {
         while level >= 0 {
             let current_node = self.nodes.get(&current_node_id).unwrap();
             let current_node_score = current_node.borrow().score;
-            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
-            let next_node = self.nodes.get(&next_node_id).unwrap();
-            let next_node_score = next_node.borrow().score;
             if score == current_node_score {
                 current_node.borrow_mut().add_value(value.to_owned());
                 return None;
-            } else if score >= next_node_score {
+            }
+
+            // It's fine to unwrap. If score is at the end of the list (+inf), this method returns
+            // at the previous line. There is no value greater than +inf, so the next node of the
+            // end of the list should never be accessed.
+            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            let next_node_score = next_node.borrow().score;
+            if score >= next_node_score {
                 current_node_id = next_node_id;
             } else {
                 previous_nodes.push((level as u8, current_node.borrow().id));
@@ -178,9 +183,13 @@ impl SkipList {
             for v in current_node.borrow().values.iter() {
                 result.push(v.to_owned());
             }
-            let next_node_id = current_node.borrow().get_next(0).unwrap();
-            current_node = self.nodes.get(&next_node_id).unwrap();
-            current_node_score = current_node.borrow().score;
+            if let Some(next_node_id) = current_node.borrow().get_next(0) {
+                current_node = self.nodes.get(&next_node_id).unwrap();
+                current_node_score = current_node.borrow().score;
+            } else {
+                // Reached the end of the list (+inf); cannot proceed further
+                break;
+            }
         }
         result
     }
@@ -232,12 +241,13 @@ mod test {
             list.insert(3.0, "bar".to_string());
             list.insert(2.0, "baz".to_string());
             list.insert(1.0, "foobar".to_string());
+            list.insert(f64::INFINITY, "inf".to_string());
             let mut nodes = list.nodes.values().collect::<Vec<_>>();
             nodes.sort_by(|a, b| a.borrow().id.cmp(&b.borrow().id));
             assert_eq!(nodes.len(), 5);
             let expected = [
-                (f64::MIN, vec![]),
-                (f64::MAX, vec![]),
+                (-f64::INFINITY, vec![]),
+                (f64::INFINITY, vec!["inf"]),
                 (1.0, vec!["foo", "foobar"]),
                 (3.0, vec!["bar"]),
                 (2.0, vec!["baz"]),
@@ -299,7 +309,15 @@ mod test {
         #[test]
         fn should_get_all_values() {
             let mut list = SkipList::new(2);
-            let input = [(1.0, "a"), (3.0, "b"), (2.0, "c"), (1.0, "d"), (3.9, "e")];
+            let input = [
+                (1.0, "a"),
+                (3.0, "b"),
+                (2.0, "c"),
+                (1.0, "d"),
+                (3.9, "e"),
+                (f64::INFINITY, "f"),
+                (-f64::INFINITY, "g"),
+            ];
             for (score, value) in input {
                 list.insert(score, value.to_string());
             }
@@ -313,6 +331,10 @@ mod test {
             assert!(values.is_empty());
             let values = list.get_values(2.0, 1.9);
             assert!(values.is_empty());
+            let values = list.get_values(4.0, f64::INFINITY);
+            assert_eq!(values, ["f"]);
+            let values = list.get_values(-f64::INFINITY, 1.0000001);
+            assert_eq!(values, ["g", "a", "d"]);
         }
     }
 }
