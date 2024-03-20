@@ -28,8 +28,8 @@ impl ListNode {
         self.level = level;
     }
 
-    pub fn add_value(&mut self, value: String) {
-        self.values.insert(value);
+    pub fn add_value(&mut self, value: String) -> bool {
+        self.values.insert(value)
     }
 
     pub fn set_next(&mut self, level: u8, node: &RefCell<ListNode>) {
@@ -75,17 +75,22 @@ impl SkipList {
         }
     }
 
-    fn should_insert(&self, score: f64, value: &str) -> Option<Vec<(u8, u64)>> {
+    fn check_if_node_exists(&self, score: f64, value: &str) -> (bool, Vec<(u8, u64)>) {
         let mut level: i16 = self.max_level as i16;
         let mut current_node_id = self.head_id;
         // List of the immediate previous node per level. (level, node_id)
         let mut previous_nodes = Vec::<(u8, u64)>::new();
+        let mut node_exists = false;
         while level >= 0 {
             let current_node = self.nodes.get(&current_node_id).unwrap();
             let current_node_score = current_node.borrow().score;
             if score == current_node_score {
-                current_node.borrow_mut().add_value(value.to_owned());
-                return None;
+                node_exists = true;
+                while level >= 0 {
+                    previous_nodes.push((level as u8, current_node.borrow().id));
+                    level -= 1;
+                }
+                break;
             }
 
             // It's fine to unwrap. If score is at the end of the list (+inf), this method returns
@@ -101,7 +106,7 @@ impl SkipList {
                 level -= 1;
             }
         }
-        Some(previous_nodes)
+        (node_exists, previous_nodes)
     }
 
     fn insert_node_at_level(
@@ -129,11 +134,13 @@ impl SkipList {
     }
 
     pub fn insert(&mut self, score: f64, value: String) {
-        let prev_op = self.should_insert(score, &value);
-        if prev_op.is_none() {
+        let (node_exists, mut previous_nodes) = self.check_if_node_exists(score, &value);
+        if node_exists {
+            let (_, current_node_id) = previous_nodes.last().unwrap();
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            assert!(current_node.borrow_mut().add_value(value));
             return;
         }
-        let mut previous_nodes = prev_op.unwrap();
 
         let new_node_id = self.create_new_node(score, &value);
         let new_node = self.nodes.get(&new_node_id).unwrap();
@@ -269,20 +276,15 @@ mod test {
             // set prob to -1 so that nodes are always created in order to remove randomness
             list.prob = -1.0;
 
-            assert_eq!(
-                list.should_insert(1.0, "a").unwrap(),
-                [(2, 0), (1, 0), (0, 0)]
-            );
+            let res = list.check_if_node_exists(1.0, "a");
+            assert_eq!(res, (false, vec![(2, 0), (1, 0), (0, 0)]));
             list.insert(1.0, "a".to_string());
-            assert!(list.should_insert(1.0, "b").is_none());
-            assert_eq!(
-                list.should_insert(3.0, "c").unwrap(),
-                [(2, 2), (1, 2), (0, 2)]
-            );
-            assert_eq!(
-                list.should_insert(2.0, "d").unwrap(),
-                [(2, 2), (1, 2), (0, 2)]
-            );
+            let res = list.check_if_node_exists(1.0, "b");
+            assert_eq!(res, (true, vec![(2, 2), (1, 2), (0, 2)]));
+            let res = list.check_if_node_exists(3.0, "c");
+            assert_eq!(res, (false, vec![(2, 2), (1, 2), (0, 2)]));
+            let res = list.check_if_node_exists(2.0, "d");
+            assert_eq!(res, (false, vec![(2, 2), (1, 2), (0, 2)]));
         }
 
         #[test]
