@@ -187,7 +187,7 @@ impl SkipList {
         }
     }
 
-    pub fn get_values(&self, start_score: f64, stop_score: f64) -> Vec<String> {
+    pub fn get_values_by_score(&self, start_score: f64, stop_score: f64) -> Vec<String> {
         let mut result = Vec::new();
         let mut level: i16 = self.max_level as i16;
         let mut current_node_id = self.head_id;
@@ -222,6 +222,53 @@ impl SkipList {
             if let Some(next_node_id) = current_node.borrow().get_next(0) {
                 current_node = self.nodes.get(&next_node_id).unwrap();
                 current_node_score = current_node.borrow().score;
+            } else {
+                // Reached the end of the list (+inf); cannot proceed further
+                break;
+            }
+        }
+        result
+    }
+
+    pub fn get_values_by_rank(&self, start_rank: u64, stop_rank: u64) -> Vec<String> {
+        // input rank numbers are 0-based
+        let start_rank = start_rank + 1;
+        let stop_rank = stop_rank + 1;
+        let mut result = Vec::new();
+        let mut level: i16 = self.max_level as i16;
+        let mut current_node_id = self.head_id;
+        let mut num_seen_values = 0;
+        while level >= 0 {
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_node_span = current_node.borrow().get_span(level as u8).unwrap();
+            if start_rank <= num_seen_values + current_node_span {
+                break;
+            }
+            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            let next_node_span = next_node.borrow().get_span(level as u8).unwrap();
+            if start_rank >= num_seen_values + current_node_span + next_node_span {
+                current_node_id = next_node_id;
+            } else {
+                level -= 1;
+            }
+        }
+        let mut current_node = self.nodes.get(&current_node_id).unwrap();
+        while num_seen_values <= stop_rank {
+            for v in current_node.borrow().values.iter() {
+                num_seen_values += 1;
+                if num_seen_values >= start_rank {
+                    result.push(v.to_owned());
+                }
+                if num_seen_values == stop_rank {
+                    break;
+                }
+            }
+            if num_seen_values == stop_rank {
+                break;
+            }
+            if let Some(next_node_id) = current_node.borrow().get_next(0) {
+                current_node = self.nodes.get(&next_node_id).unwrap();
             } else {
                 // Reached the end of the list (+inf); cannot proceed further
                 break;
@@ -362,7 +409,7 @@ mod test {
         }
 
         #[test]
-        fn should_get_all_values() {
+        fn should_get_values_by_score() {
             let mut list = SkipList::new(2);
             let input = [
                 (1.0, "a"),
@@ -376,20 +423,51 @@ mod test {
             for (score, value) in input {
                 list.insert(score, value.to_string());
             }
-            let values = list.get_values(-1.0, 4.0);
+            let values = list.get_values_by_score(-1.0, 4.0);
             assert_eq!(values, ["a", "d", "c", "b", "e"]);
-            let values = list.get_values(1.5, 4.0);
+            let values = list.get_values_by_score(1.5, 4.0);
             assert_eq!(values, ["c", "b", "e"]);
-            let values = list.get_values(1.5, 3.5);
+            let values = list.get_values_by_score(1.5, 3.5);
             assert_eq!(values, ["c", "b"]);
-            let values = list.get_values(1.5, 1.9);
+            let values = list.get_values_by_score(1.5, 1.9);
             assert!(values.is_empty());
-            let values = list.get_values(2.0, 1.9);
+            let values = list.get_values_by_score(2.0, 1.9);
             assert!(values.is_empty());
-            let values = list.get_values(4.0, f64::INFINITY);
+            let values = list.get_values_by_score(4.0, f64::INFINITY);
             assert_eq!(values, ["f"]);
-            let values = list.get_values(-f64::INFINITY, 1.0000001);
+            let values = list.get_values_by_score(-f64::INFINITY, 1.0000001);
             assert_eq!(values, ["g", "a", "d"]);
+        }
+
+        #[test]
+        fn should_get_values_by_rank() {
+            let mut list = SkipList::new(2);
+            let input = [
+                (1.0, "a"),
+                (3.0, "b"),
+                (2.0, "c"),
+                (1.0, "d"),
+                (3.9, "e"),
+                (f64::INFINITY, "f"),
+            ];
+            for (score, value) in input {
+                list.insert(score, value.to_string());
+            }
+            let values = list.get_values_by_rank(1, 4);
+            assert_eq!(values, ["d", "c", "b", "e"]);
+            let values = list.get_values_by_rank(3, 8);
+            assert_eq!(values, ["b", "e", "f"]);
+            let values = list.get_values_by_rank(0, 1);
+            assert_eq!(values, ["a", "d"]);
+            let values = list.get_values_by_rank(0, 0);
+            assert_eq!(values, ["a"]);
+            let values = list.get_values_by_rank(2, 0);
+            assert!(values.is_empty());
+
+            // Test if code behaves when the start node holds values
+            list.insert(-f64::INFINITY, "g".to_string());
+            let values = list.get_values_by_rank(0, 1);
+            assert_eq!(values, ["g", "a"]);
         }
     }
 }
