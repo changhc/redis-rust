@@ -131,7 +131,6 @@ impl SkipList {
             new_node.borrow_mut().set_next(current_level, next_node);
         }
         new_node.borrow_mut().set_level(current_level);
-        new_node.borrow_mut().set_span(current_level, 0);
         current_node.borrow_mut().set_next(current_level, new_node);
     }
 
@@ -345,7 +344,7 @@ mod test {
                 list.insert(i as f64, i.to_string());
             }
             let n0 = list.nodes.get(&2).unwrap();
-            assert_eq!(n0.borrow().get_span(0).unwrap(), 1);
+            assert_eq!(n0.borrow().get_span(0), 1);
 
             let head = list.nodes.get(&0).unwrap();
             assert_eq!(head.borrow().get_span(2), 5);
