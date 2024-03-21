@@ -254,7 +254,7 @@ impl SkipList {
             }
         }
         let mut current_node = self.nodes.get(&current_node_id).unwrap();
-        while num_seen_values <= stop_rank {
+        while num_seen_values < stop_rank {
             for v in current_node.borrow().values.iter() {
                 num_seen_values += 1;
                 if num_seen_values >= start_rank {
