@@ -145,28 +145,39 @@ impl SkipList {
     }
 
     pub fn insert(&mut self, score: f64, value: String) {
-        let (node_exists, previous_nodes) = self.check_if_node_exists(score);
+        let (node_exists, mut previous_nodes) = self.check_if_node_exists(score);
         if node_exists {
             let (_, current_node_id) = previous_nodes.last().unwrap();
-            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_node = self.nodes.get(current_node_id).unwrap();
             assert!(current_node.borrow_mut().add_value(value));
         } else {
             let new_node_id = self.create_new_node(score, &value);
             let new_node = self.nodes.get(&new_node_id).unwrap();
-            let (current_level, current_node_id) = previous_nodes.last().unwrap();
-            assert_eq!(current_level, &0);
+            let (current_level, current_node_id) = previous_nodes.pop().unwrap();
+            assert_eq!(current_level, 0);
             let current_node = self.nodes.get(&current_node_id).unwrap();
             self.insert_node_at_level(current_node, new_node, current_level.to_owned());
 
             let mut rng = rand::thread_rng();
-            for (current_level, current_node_id) in previous_nodes.iter().rev().skip(1) {
-                if rng.gen::<f64>() < self.prob {
-                    break;
-                }
-                let current_node = self.nodes.get(current_node_id).unwrap();
+            while !previous_nodes.is_empty() && rng.gen::<f64>() >= self.prob {
+                let (current_level, current_node_id) = previous_nodes.pop().unwrap();
+                let current_node = self.nodes.get(&current_node_id).unwrap();
                 self.insert_node_at_level(current_node, new_node, current_level.to_owned());
             }
+
+            // Push the new node into previous_nodes for span adjustment. The popped previous nodes
+            // at each level are replaced by the new node as the new node is the one whose span
+            // should get incremented
+            let mut level = self.max_level;
+            if let Some((current_level, _)) = previous_nodes.last() {
+                level = current_level - 1;
+            }
+            for i in (0..=level).rev() {
+                previous_nodes.push((i, new_node_id));
+            }
         }
+
+        // Increment span at each level
         for (current_level, current_node_id) in previous_nodes.iter().cloned() {
             let current_node = self.nodes.get(&current_node_id).unwrap();
             let current_span = current_node.borrow().get_span(current_level).unwrap();
@@ -287,7 +298,24 @@ mod test {
         }
 
         #[test]
-        fn should_accumulate_span() {}
+        fn should_accumulate_span() {
+            let mut list = SkipList::new(2);
+            // set prob to 1 so that only the head node has level > 0
+            list.prob = 1.0;
+            for i in 0..5 {
+                list.insert(i as f64, i.to_string());
+            }
+            let head = list.nodes.get(&0).unwrap();
+            assert_eq!(head.borrow().get_span(2).unwrap(), 5);
+            assert_eq!(head.borrow().get_span(1).unwrap(), 5);
+            assert_eq!(head.borrow().get_span(0).unwrap(), 0);
+
+            list.insert(-f64::INFINITY, "inf".to_string());
+            let head = list.nodes.get(&0).unwrap();
+            assert_eq!(head.borrow().get_span(2).unwrap(), 6);
+            assert_eq!(head.borrow().get_span(1).unwrap(), 6);
+            assert_eq!(head.borrow().get_span(0).unwrap(), 1);
+        }
 
         #[test]
         fn insert_node_should_return_none_when_scores_exist() {
