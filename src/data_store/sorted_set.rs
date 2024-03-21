@@ -36,7 +36,7 @@ impl ListNode {
         self.values.insert(value)
     }
 
-    pub fn remove_value(&mut self, value: &String) -> bool {
+    pub fn remove_value(&mut self, value: &str) -> bool {
         self.values.remove(value)
     }
 
@@ -285,27 +285,43 @@ impl SkipList {
         result
     }
 
-    pub fn remove(&mut self, score: f64, value: String) {
-        let (node_exists, mut previous_nodes) = self.check_if_node_exists(score);
+    pub fn remove(&mut self, score: f64, value: &str) {
+        let (node_exists, previous_nodes) = self.check_if_node_exists(score);
         if !node_exists {
             return;
         }
         let (current_level, current_node_id) = previous_nodes.last().unwrap();
         assert_eq!(current_level, &0);
         let current_node = self.nodes.get(current_node_id).unwrap();
-        if !current_node.borrow_mut().remove_value(&value) {
+        if !current_node.borrow_mut().remove_value(value) {
             return;
         }
-        if current_node.borrow().values.len() == 0 {
-            //self.remove_node();
-        } else {
-            while previous_nodes.len() > 0 {
-                let (current_level, current_node_id) = previous_nodes.pop().unwrap();
-                let current_node = self.nodes.get(&current_node_id).unwrap();
-                let current_span = current_node.borrow().get_span(current_level);
-                current_node.borrow_mut().set_span(current_level, current_span - 1);
-            }
+        for (current_level, current_node_id) in previous_nodes.iter().cloned() {
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_span = current_node.borrow().get_span(current_level);
+            current_node
+                .borrow_mut()
+                .set_span(current_level, current_span - 1);
         }
+
+        // Remove the node from which the value is removed if it has no remaining value at all
+        let should_remove = current_node_id > &1 && current_node.borrow().values.is_empty();
+        if should_remove {
+            self.remove_node(current_node_id);
+        }
+    }
+
+    fn remove_node(&mut self, current_node_id: &u64) {
+        let current_node = self.nodes.get(&current_node_id).unwrap();
+        for i in 0..=current_node.borrow().level {
+            let previous_node_id = current_node.borrow().prev[i as usize].unwrap();
+            let previous_node = self.nodes.get(&previous_node_id).unwrap();
+            let next_node_id = current_node.borrow().next[i as usize].unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            previous_node.borrow_mut().set_next(i, next_node);
+            next_node.borrow_mut().set_prev(i, previous_node);
+        }
+        self.nodes.remove(&current_node_id);
     }
 }
 
@@ -525,7 +541,7 @@ mod test {
             assert_eq!(head.borrow().get_span(1), 3);
             assert_eq!(head.borrow().get_span(2), 3);
 
-            list.remove(1.0, "bar".to_string());
+            list.remove(1.0, "bar");
             assert_eq!(list.get_values_by_score(1.0, 1.0), ["foo"]);
 
             let node = list.nodes.get(&2).unwrap();
@@ -534,6 +550,26 @@ mod test {
             assert_eq!(head.borrow().get_span(0), 0);
             assert_eq!(head.borrow().get_span(1), 2);
             assert_eq!(head.borrow().get_span(2), 2);
+        }
+
+        #[test]
+        fn should_remove_node_from_list_when_node_is_empty() {
+            let mut list = SkipList::new(2);
+            // Remove randomness
+            list.prob = 1.0;
+
+            list.insert(1.0, "foo".to_string());
+            assert_eq!(list.get_values_by_score(1.0, 1.0), ["foo"]);
+
+            list.remove(1.0, "foo");
+            assert!(list.get_values_by_score(1.0, 1.0).is_empty());
+
+            assert_eq!(list.nodes.len(), 2);
+            assert!(list.nodes.get(&2).is_none());
+            let head = list.nodes.get(&0).unwrap();
+            let tail = list.nodes.get(&1).unwrap();
+            assert_eq!(head.borrow().get_next(0).unwrap(), 1);
+            assert_eq!(tail.borrow().get_prev(0).unwrap(), 0);
         }
     }
 }
