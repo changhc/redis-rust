@@ -411,6 +411,8 @@ mod test {
         #[test]
         fn should_get_values_by_score() {
             let mut list = SkipList::new(2);
+            // Remove randomness
+            list.prob = 1.0;
             let input = [
                 (1.0, "a"),
                 (3.0, "b"),
@@ -442,6 +444,8 @@ mod test {
         #[test]
         fn should_get_values_by_rank() {
             let mut list = SkipList::new(2);
+            // Remove randomness
+            list.prob = 1.0;
             let input = [
                 (1.0, "a"),
                 (3.0, "b"),
