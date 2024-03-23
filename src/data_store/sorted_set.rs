@@ -314,9 +314,9 @@ impl SkipList {
     fn remove_node(&mut self, current_node_id: &u64) {
         let current_node = self.nodes.get(&current_node_id).unwrap();
         for i in 0..=current_node.borrow().level {
-            let previous_node_id = current_node.borrow().prev[i as usize].unwrap();
+            let previous_node_id = current_node.borrow().get_prev(i).unwrap();
             let previous_node = self.nodes.get(&previous_node_id).unwrap();
-            let next_node_id = current_node.borrow().next[i as usize].unwrap();
+            let next_node_id = current_node.borrow().get_next(i).unwrap();
             let next_node = self.nodes.get(&next_node_id).unwrap();
             previous_node.borrow_mut().set_next(i, next_node);
             next_node.borrow_mut().set_prev(i, previous_node);
