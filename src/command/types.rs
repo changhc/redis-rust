@@ -36,12 +36,17 @@ pub enum HashCommandType {
     IncrBy,
 }
 
+pub enum SortedSetCommandType {
+    Add,
+}
+
 pub enum CommandType {
     Ping,
     String(StringCommandType),
     List(ListCommandType),
     Set(SetCommandType),
     Hash(HashCommandType),
+    SortedSet(SortedSetCommandType),
 }
 
 const STRING_COMMANDS: &[&str] = &[
@@ -50,6 +55,7 @@ const STRING_COMMANDS: &[&str] = &[
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
 const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers", "sismember", "scard", "sdiff"];
 const HASH_COMMANDS: &[&str] = &["hset", "hget", "hgetall", "hincrby"];
+const SORTED_SET_COMMANDS: &[&str] = &["zadd"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -63,6 +69,9 @@ impl FromStr for CommandType {
             s if LIST_COMMANDS.contains(&s) => Ok(CommandType::List(ListCommandType::from_str(s)?)),
             s if SET_COMMANDS.contains(&s) => Ok(CommandType::Set(SetCommandType::from_str(s)?)),
             s if HASH_COMMANDS.contains(&s) => Ok(CommandType::Hash(HashCommandType::from_str(s)?)),
+            s if SORTED_SET_COMMANDS.contains(&s) => {
+                Ok(CommandType::SortedSet(SortedSetCommandType::from_str(s)?))
+            }
             _ => Err(()),
         }
     }
@@ -127,6 +136,17 @@ impl FromStr for HashCommandType {
             "hget" => Ok(HashCommandType::Get),
             "hgetall" => Ok(HashCommandType::GetAll),
             "hincrby" => Ok(HashCommandType::IncrBy),
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for SortedSetCommandType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<SortedSetCommandType, Self::Err> {
+        match s {
+            "zadd" => Ok(SortedSetCommandType::Add),
             _ => Err(()),
         }
     }

@@ -5,6 +5,45 @@ use std::collections::{BTreeSet, HashMap};
 const SKIP_LIST_MAX_LEVEL: u8 = 32;
 const SKIP_LIST_PROB: f64 = 0.5;
 
+pub struct SortedSet {
+    elements: HashMap<String, f64>,
+    skip_list: SkipList,
+}
+
+impl Default for SortedSet {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SortedSet {
+    pub fn new() -> Self {
+        Self {
+            elements: HashMap::new(),
+            skip_list: SkipList::new(SKIP_LIST_MAX_LEVEL),
+        }
+    }
+
+    pub fn insert(&mut self, score: f64, element: String) -> bool {
+        let mut is_new_element = true;
+        if let Some(current_score) = self.elements.get(&element) {
+            self.skip_list.remove(*current_score, &element);
+            is_new_element = false;
+        }
+        self.elements.insert(element.clone(), score);
+        self.skip_list.insert(score, element);
+        is_new_element
+    }
+
+    pub fn len(&self) -> usize {
+        self.elements.len()
+    }
+
+    pub fn get(&self, element: &str) -> Option<f64> {
+        self.elements.get(element).cloned()
+    }
+}
+
 struct ListNode {
     id: u64,
     level: u8,
@@ -65,7 +104,7 @@ impl ListNode {
     }
 }
 
-pub struct SkipList {
+struct SkipList {
     max_level: u8,
     prob: f64,
     head_id: u64,
@@ -312,7 +351,7 @@ impl SkipList {
     }
 
     fn remove_node(&mut self, current_node_id: &u64) {
-        let current_node = self.nodes.get(&current_node_id).unwrap();
+        let current_node = self.nodes.get(current_node_id).unwrap();
         for i in 0..=current_node.borrow().level {
             let previous_node_id = current_node.borrow().get_prev(i).unwrap();
             let previous_node = self.nodes.get(&previous_node_id).unwrap();
@@ -321,7 +360,7 @@ impl SkipList {
             previous_node.borrow_mut().set_next(i, next_node);
             next_node.borrow_mut().set_prev(i, previous_node);
         }
-        self.nodes.remove(&current_node_id);
+        self.nodes.remove(current_node_id);
     }
 }
 

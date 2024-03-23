@@ -38,6 +38,15 @@ impl RespReply for IntegerReply {
     }
 }
 
+pub struct UnsignedIntegerReply {
+    pub value: u64,
+}
+impl RespReply for UnsignedIntegerReply {
+    fn serialise(&self) -> String {
+        format!(":{}\r\n", self.value)
+    }
+}
+
 pub struct BulkStringReply {
     pub value: String,
 }

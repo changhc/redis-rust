@@ -7,9 +7,12 @@ mod types;
 use std::str::FromStr;
 use types::{CommandType, HashCommandType, ListCommandType, SetCommandType, StringCommandType};
 
+use self::types::SortedSetCommandType;
+
 mod hash;
 mod list;
 mod set;
+mod sorted_set;
 mod string;
 
 #[derive(Debug)]
@@ -30,6 +33,7 @@ impl CommandFactory {
                 CommandType::List(v) => handle_list_command(v, body),
                 CommandType::Set(v) => handle_set_command(v, body),
                 CommandType::Hash(v) => handle_hash_command(v, body),
+                CommandType::SortedSet(v) => handle_sorted_set_command(v, body),
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),
         }
@@ -174,6 +178,18 @@ fn handle_hash_command(
             Err(e) => Err(e),
         },
         HashCommandType::IncrBy => match hash::HIncrByCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
+    }
+}
+
+fn handle_sorted_set_command(
+    v: SortedSetCommandType,
+    body: Vec<String>,
+) -> Result<Box<dyn Command>, RequestError> {
+    match v {
+        SortedSetCommandType::Add => match sorted_set::ZAddCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },

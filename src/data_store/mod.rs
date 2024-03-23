@@ -2,7 +2,7 @@ mod sorted_set;
 
 use crate::error::{ExecutionError, InternalError};
 
-use sorted_set::SkipList;
+use sorted_set::SortedSet;
 use std::collections::{HashMap, HashSet, LinkedList};
 use std::fmt::{Display, Formatter};
 
@@ -137,6 +137,36 @@ impl DataStore {
         }
     }
 
+    pub fn get_sorted_set_mut(
+        &mut self,
+        key: &String,
+    ) -> Result<Option<&mut SortedSet>, Box<dyn std::error::Error>> {
+        match self.ds.get_mut(key) {
+            Some(entry) => match entry.type_ {
+                RedisEntryType::SortedSet => match &mut entry.sorted_set {
+                    Some(v) => Ok(Some(v)),
+                    None => Err(Self::throw_integration_error(
+                        key,
+                        RedisEntryType::SortedSet,
+                    )),
+                },
+                _ => Err(Box::new(ExecutionError::IncorrectType)),
+            },
+            None => Ok(None),
+        }
+    }
+
+    pub fn insert_sorted_set(&mut self, key: &String) -> Result<(), Box<dyn std::error::Error>> {
+        match self.ds.get(key) {
+            Some(_) => Err(Box::new(InternalError::KeyError)),
+            None => {
+                let s = RedisEntry::init_sorted_set();
+                self.ds.insert(key.clone(), s);
+                Ok(())
+            }
+        }
+    }
+
     pub fn drop_key(&mut self, key: &String) {
         self.ds.remove(key);
     }
@@ -168,6 +198,7 @@ pub enum RedisEntryType {
     List,
     Set,
     Hash,
+    SortedSet,
 }
 
 impl Display for RedisEntryType {
@@ -183,6 +214,7 @@ pub struct RedisEntry {
     pub list: Option<LinkedList<String>>,
     pub set: Option<HashSet<String>>,
     pub hash: Option<HashMap<String, String>>,
+    pub sorted_set: Option<SortedSet>,
 }
 
 impl RedisEntry {
@@ -214,6 +246,14 @@ impl RedisEntry {
         RedisEntry {
             type_: RedisEntryType::Hash,
             hash: Some(HashMap::new()),
+            ..Default::default()
+        }
+    }
+
+    pub fn init_sorted_set() -> Self {
+        RedisEntry {
+            type_: RedisEntryType::SortedSet,
+            sorted_set: Some(SortedSet::new()),
             ..Default::default()
         }
     }
