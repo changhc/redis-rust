@@ -42,6 +42,10 @@ impl SortedSet {
     pub fn get(&self, element: &str) -> Option<f64> {
         self.elements.get(element).cloned()
     }
+
+    pub fn get_values_by_rank(&self, start: u64, stop: u64) -> Vec<String> {
+        self.skip_list.get_values_by_rank(start, stop)
+    }
 }
 
 struct ListNode {
