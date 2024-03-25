@@ -9,6 +9,7 @@ struct ListNode {
     id: u64,
     level: u8,
     next: HashMap<u8, u64>,
+    span: HashMap<u8, u64>,
     score: f64,
     values: BTreeSet<String>,
 }
@@ -20,6 +21,7 @@ impl ListNode {
             level,
             score,
             next: HashMap::new(),
+            span: (0..=level).map(|v| (v, 0)).collect::<HashMap<_, _>>(),
             values: BTreeSet::new(),
         }
     }
@@ -28,8 +30,8 @@ impl ListNode {
         self.level = level;
     }
 
-    pub fn add_value(&mut self, value: String) {
-        self.values.insert(value);
+    pub fn add_value(&mut self, value: String) -> bool {
+        self.values.insert(value)
     }
 
     pub fn set_next(&mut self, level: u8, node: &RefCell<ListNode>) {
@@ -38,6 +40,14 @@ impl ListNode {
 
     pub fn get_next(&self, level: u8) -> Option<u64> {
         self.next.get(&level).cloned()
+    }
+
+    pub fn set_span(&mut self, level: u8, value: u64) {
+        self.span.insert(level, value);
+    }
+
+    pub fn get_span(&self, level: u8) -> Option<u64> {
+        self.span.get(&level).cloned()
     }
 }
 
@@ -75,17 +85,22 @@ impl SkipList {
         }
     }
 
-    fn should_insert(&self, score: f64, value: &str) -> Option<Vec<(u8, u64)>> {
+    fn check_if_node_exists(&self, score: f64) -> (bool, Vec<(u8, u64)>) {
         let mut level: i16 = self.max_level as i16;
         let mut current_node_id = self.head_id;
         // List of the immediate previous node per level. (level, node_id)
         let mut previous_nodes = Vec::<(u8, u64)>::new();
+        let mut node_exists = false;
         while level >= 0 {
             let current_node = self.nodes.get(&current_node_id).unwrap();
             let current_node_score = current_node.borrow().score;
             if score == current_node_score {
-                current_node.borrow_mut().add_value(value.to_owned());
-                return None;
+                node_exists = true;
+                while level >= 0 {
+                    previous_nodes.push((level as u8, current_node.borrow().id));
+                    level -= 1;
+                }
+                break;
             }
 
             // It's fine to unwrap. If score is at the end of the list (+inf), this method returns
@@ -101,7 +116,7 @@ impl SkipList {
                 level -= 1;
             }
         }
-        Some(previous_nodes)
+        (node_exists, previous_nodes)
     }
 
     fn insert_node_at_level(
@@ -116,6 +131,7 @@ impl SkipList {
             new_node.borrow_mut().set_next(current_level, next_node);
         }
         new_node.borrow_mut().set_level(current_level);
+        new_node.borrow_mut().set_span(current_level, 0);
         current_node.borrow_mut().set_next(current_level, new_node);
     }
 
@@ -129,27 +145,45 @@ impl SkipList {
     }
 
     pub fn insert(&mut self, score: f64, value: String) {
-        let prev_op = self.should_insert(score, &value);
-        if prev_op.is_none() {
-            return;
-        }
-        let mut previous_nodes = prev_op.unwrap();
+        let (node_exists, mut previous_nodes) = self.check_if_node_exists(score);
+        if node_exists {
+            let (_, current_node_id) = previous_nodes.last().unwrap();
+            let current_node = self.nodes.get(current_node_id).unwrap();
+            assert!(current_node.borrow_mut().add_value(value));
+        } else {
+            let new_node_id = self.create_new_node(score, &value);
+            let new_node = self.nodes.get(&new_node_id).unwrap();
+            let (current_level, current_node_id) = previous_nodes.pop().unwrap();
+            assert_eq!(current_level, 0);
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            self.insert_node_at_level(current_node, new_node, current_level.to_owned());
 
-        let new_node_id = self.create_new_node(score, &value);
-        let new_node = self.nodes.get(&new_node_id).unwrap();
-        let (current_level, current_node_id) = previous_nodes.pop().unwrap();
-        assert_eq!(current_level, 0);
-        let current_node = self.nodes.get(&current_node_id).unwrap();
-        self.insert_node_at_level(current_node, new_node, current_level);
-
-        let mut rng = rand::thread_rng();
-        while rng.gen::<f64>() > self.prob {
-            if let Some((current_level, current_node_id)) = previous_nodes.pop() {
+            let mut rng = rand::thread_rng();
+            while !previous_nodes.is_empty() && rng.gen::<f64>() >= self.prob {
+                let (current_level, current_node_id) = previous_nodes.pop().unwrap();
                 let current_node = self.nodes.get(&current_node_id).unwrap();
-                self.insert_node_at_level(current_node, new_node, current_level);
-            } else {
-                break;
+                self.insert_node_at_level(current_node, new_node, current_level.to_owned());
             }
+
+            // Push the new node into previous_nodes for span adjustment. The popped previous nodes
+            // at each level are replaced by the new node as the new node is the one whose span
+            // should get incremented
+            let mut level = self.max_level;
+            if let Some((current_level, _)) = previous_nodes.last() {
+                level = current_level - 1;
+            }
+            for i in (0..=level).rev() {
+                previous_nodes.push((i, new_node_id));
+            }
+        }
+
+        // Increment span at each level
+        for (current_level, current_node_id) in previous_nodes.iter().cloned() {
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_span = current_node.borrow().get_span(current_level).unwrap();
+            current_node
+                .borrow_mut()
+                .set_span(current_level, current_span + 1);
         }
     }
 
@@ -264,25 +298,43 @@ mod test {
         }
 
         #[test]
+        fn should_accumulate_span() {
+            let mut list = SkipList::new(2);
+            // set prob to 1 so that only the head node has level > 0
+            list.prob = 1.0;
+            for i in 0..5 {
+                list.insert(i as f64, i.to_string());
+            }
+            let n0 = list.nodes.get(&2).unwrap();
+            assert_eq!(n0.borrow().get_span(0).unwrap(), 1);
+
+            let head = list.nodes.get(&0).unwrap();
+            assert_eq!(head.borrow().get_span(2).unwrap(), 5);
+            assert_eq!(head.borrow().get_span(1).unwrap(), 5);
+            assert_eq!(head.borrow().get_span(0).unwrap(), 0);
+
+            list.insert(-f64::INFINITY, "inf".to_string());
+            let head = list.nodes.get(&0).unwrap();
+            assert_eq!(head.borrow().get_span(2).unwrap(), 6);
+            assert_eq!(head.borrow().get_span(1).unwrap(), 6);
+            assert_eq!(head.borrow().get_span(0).unwrap(), 1);
+        }
+
+        #[test]
         fn insert_node_should_return_none_when_scores_exist() {
             let mut list = SkipList::new(2);
             // set prob to -1 so that nodes are always created in order to remove randomness
             list.prob = -1.0;
 
-            assert_eq!(
-                list.should_insert(1.0, "a").unwrap(),
-                [(2, 0), (1, 0), (0, 0)]
-            );
+            let res = list.check_if_node_exists(1.0);
+            assert_eq!(res, (false, vec![(2, 0), (1, 0), (0, 0)]));
             list.insert(1.0, "a".to_string());
-            assert!(list.should_insert(1.0, "b").is_none());
-            assert_eq!(
-                list.should_insert(3.0, "c").unwrap(),
-                [(2, 2), (1, 2), (0, 2)]
-            );
-            assert_eq!(
-                list.should_insert(2.0, "d").unwrap(),
-                [(2, 2), (1, 2), (0, 2)]
-            );
+            let res = list.check_if_node_exists(1.0);
+            assert_eq!(res, (true, vec![(2, 2), (1, 2), (0, 2)]));
+            let res = list.check_if_node_exists(3.0);
+            assert_eq!(res, (false, vec![(2, 2), (1, 2), (0, 2)]));
+            let res = list.check_if_node_exists(2.0);
+            assert_eq!(res, (false, vec![(2, 2), (1, 2), (0, 2)]));
         }
 
         #[test]
@@ -306,6 +358,7 @@ mod test {
             n0.borrow_mut().set_next(0, n1);
             list.insert_node_at_level(n0, n2, 0);
             assert_eq!(n0.borrow().get_next(0).unwrap(), 4);
+            assert_eq!(n2.borrow().get_next(0).unwrap(), 3);
         }
 
         #[test]
