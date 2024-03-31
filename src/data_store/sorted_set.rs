@@ -351,7 +351,7 @@ impl SkipList {
     }
 
     fn remove_node(&mut self, current_node_id: &u64) {
-        let current_node = self.nodes.get(current_node_id).unwrap();
+        let current_node = self.nodes.get(&current_node_id).unwrap();
         for i in 0..=current_node.borrow().level {
             let previous_node_id = current_node.borrow().get_prev(i).unwrap();
             let previous_node = self.nodes.get(&previous_node_id).unwrap();
@@ -360,7 +360,7 @@ impl SkipList {
             previous_node.borrow_mut().set_next(i, next_node);
             next_node.borrow_mut().set_prev(i, previous_node);
         }
-        self.nodes.remove(current_node_id);
+        self.nodes.remove(&current_node_id);
     }
 }
 
