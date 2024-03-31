@@ -9,6 +9,7 @@ struct ListNode {
     id: u64,
     level: u8,
     next: Vec<Option<u64>>,
+    prev: Vec<Option<u64>>,
     span: Vec<u64>,
     score: f64,
     values: BTreeSet<String>,
@@ -21,6 +22,7 @@ impl ListNode {
             level,
             score,
             next: vec![None; level as usize + 1],
+            prev: vec![None; level as usize + 1],
             span: vec![0u64; level as usize + 1],
             values: BTreeSet::new(),
         }
@@ -34,12 +36,24 @@ impl ListNode {
         self.values.insert(value)
     }
 
+    pub fn remove_value(&mut self, value: &str) -> bool {
+        self.values.remove(value)
+    }
+
     pub fn set_next(&mut self, level: u8, node: &RefCell<ListNode>) {
         self.next[level as usize] = Some(node.borrow().id);
     }
 
     pub fn get_next(&self, level: u8) -> Option<u64> {
         self.next[level as usize]
+    }
+
+    pub fn set_prev(&mut self, level: u8, node: &RefCell<ListNode>) {
+        self.prev[level as usize] = Some(node.borrow().id);
+    }
+
+    pub fn get_prev(&self, level: u8) -> Option<u64> {
+        self.prev[level as usize]
     }
 
     pub fn set_span(&mut self, level: u8, value: u64) {
@@ -74,6 +88,7 @@ impl SkipList {
         let tail_id = tail_node.borrow().id;
         for level in 0..=max_level {
             head_node.borrow_mut().set_next(level, &tail_node);
+            tail_node.borrow_mut().set_prev(level, &head_node);
         }
         let nodes = HashMap::from([(head_id, head_node), (tail_id, tail_node)]);
         SkipList {
@@ -129,9 +144,11 @@ impl SkipList {
         if let Some(next_next_id) = next_next_id_op {
             let next_node = self.nodes.get(&next_next_id).unwrap();
             new_node.borrow_mut().set_next(current_level, next_node);
+            next_node.borrow_mut().set_prev(current_level, new_node);
         }
         new_node.borrow_mut().set_level(current_level);
         current_node.borrow_mut().set_next(current_level, new_node);
+        new_node.borrow_mut().set_prev(current_level, current_node);
     }
 
     fn create_new_node(&mut self, level: u8, score: f64, value: &str) -> u64 {
@@ -267,6 +284,45 @@ impl SkipList {
         }
         result
     }
+
+    pub fn remove(&mut self, score: f64, value: &str) {
+        let (node_exists, previous_nodes) = self.check_if_node_exists(score);
+        if !node_exists {
+            return;
+        }
+        let (current_level, current_node_id) = previous_nodes.last().unwrap();
+        assert_eq!(current_level, &0);
+        let current_node = self.nodes.get(current_node_id).unwrap();
+        if !current_node.borrow_mut().remove_value(value) {
+            return;
+        }
+        for (current_level, current_node_id) in previous_nodes.iter().cloned() {
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_span = current_node.borrow().get_span(current_level);
+            current_node
+                .borrow_mut()
+                .set_span(current_level, current_span - 1);
+        }
+
+        // Remove the node from which the value is removed if it has no remaining value at all
+        let should_remove = current_node_id > &1 && current_node.borrow().values.is_empty();
+        if should_remove {
+            self.remove_node(current_node_id);
+        }
+    }
+
+    fn remove_node(&mut self, current_node_id: &u64) {
+        let current_node = self.nodes.get(&current_node_id).unwrap();
+        for i in 0..=current_node.borrow().level {
+            let previous_node_id = current_node.borrow().get_prev(i).unwrap();
+            let previous_node = self.nodes.get(&previous_node_id).unwrap();
+            let next_node_id = current_node.borrow().get_next(i).unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            previous_node.borrow_mut().set_next(i, next_node);
+            next_node.borrow_mut().set_prev(i, previous_node);
+        }
+        self.nodes.remove(&current_node_id);
+    }
 }
 
 #[cfg(test)]
@@ -387,6 +443,7 @@ mod test {
         #[test]
         fn should_insert_node_at_level() {
             let mut list = SkipList::new(2);
+            list.prob = 1.0;
             list.create_new_node(0, 1.0, "a");
             list.create_new_node(0, 3.0, "b");
             list.create_new_node(0, 2.0, "c");
@@ -396,7 +453,9 @@ mod test {
             n0.borrow_mut().set_next(0, n1);
             list.insert_node_at_level(n0, n2, 0);
             assert_eq!(n0.borrow().get_next(0).unwrap(), 4);
+            assert_eq!(n2.borrow().get_prev(0).unwrap(), 2);
             assert_eq!(n2.borrow().get_next(0).unwrap(), 3);
+            assert_eq!(n1.borrow().get_prev(0).unwrap(), 4);
         }
 
         #[test]
@@ -463,6 +522,54 @@ mod test {
             list.insert(-f64::INFINITY, "g".to_string());
             let values = list.get_values_by_rank(0, 1);
             assert_eq!(values, ["g", "a"]);
+        }
+
+        #[test]
+        fn should_remove_value() {
+            let mut list = SkipList::new(2);
+            // set prob to -1 so that nodes are always created in order to remove randomness
+            list.prob = 1.0;
+
+            list.insert(1.0, "foo".to_string());
+            list.insert(1.0, "bar".to_string());
+            list.insert(0.0, "baz".to_string());
+            assert_eq!(list.get_values_by_score(1.0, 1.0), ["bar", "foo"]);
+            let node = list.nodes.get(&2).unwrap();
+            assert_eq!(node.borrow().get_span(0), 2);
+            let head = list.nodes.get(&0).unwrap();
+            assert_eq!(head.borrow().get_span(0), 0);
+            assert_eq!(head.borrow().get_span(1), 3);
+            assert_eq!(head.borrow().get_span(2), 3);
+
+            list.remove(1.0, "bar");
+            assert_eq!(list.get_values_by_score(1.0, 1.0), ["foo"]);
+
+            let node = list.nodes.get(&2).unwrap();
+            assert_eq!(node.borrow().get_span(0), 1);
+            let head = list.nodes.get(&0).unwrap();
+            assert_eq!(head.borrow().get_span(0), 0);
+            assert_eq!(head.borrow().get_span(1), 2);
+            assert_eq!(head.borrow().get_span(2), 2);
+        }
+
+        #[test]
+        fn should_remove_node_from_list_when_node_is_empty() {
+            let mut list = SkipList::new(2);
+            // Remove randomness
+            list.prob = 1.0;
+
+            list.insert(1.0, "foo".to_string());
+            assert_eq!(list.get_values_by_score(1.0, 1.0), ["foo"]);
+
+            list.remove(1.0, "foo");
+            assert!(list.get_values_by_score(1.0, 1.0).is_empty());
+
+            assert_eq!(list.nodes.len(), 2);
+            assert!(list.nodes.get(&2).is_none());
+            let head = list.nodes.get(&0).unwrap();
+            let tail = list.nodes.get(&1).unwrap();
+            assert_eq!(head.borrow().get_next(0).unwrap(), 1);
+            assert_eq!(tail.borrow().get_prev(0).unwrap(), 0);
         }
     }
 }
