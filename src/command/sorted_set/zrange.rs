@@ -1,7 +1,7 @@
 use crate::command::Command;
 use crate::data_store::DataStore;
 use crate::error::RequestError;
-use crate::execution_result::list::LRangeResult;
+use crate::execution_result::sorted_set::ZRangeResult;
 use crate::execution_result::ExecutionResult;
 
 #[derive(Debug)]
@@ -46,11 +46,11 @@ impl Command for ZRangeCommand {
                     true => self.stop as u64,
                     false => (size as i64 + self.stop) as u64,
                 };
-                Ok(Box::new(LRangeResult {
+                Ok(Box::new(ZRangeResult {
                     values: sorted_set.get_values_by_rank(start, stop),
                 }))
             }
-            None => Ok(Box::new(LRangeResult { values: Vec::new() })),
+            None => Ok(Box::new(ZRangeResult { values: Vec::new() })),
         }
     }
 }
