@@ -35,6 +35,15 @@ impl SortedSet {
         is_new_element
     }
 
+    pub fn remove(&mut self, element: &str) -> bool {
+        if let Some(score) = self.elements.get(element) {
+            self.skip_list.remove(*score, element);
+            self.elements.remove(element);
+            return true;
+        }
+        false
+    }
+
     pub fn len(&self) -> usize {
         self.elements.len()
     }
