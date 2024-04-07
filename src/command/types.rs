@@ -38,6 +38,7 @@ pub enum HashCommandType {
 
 pub enum SortedSetCommandType {
     Add,
+    Range,
 }
 
 pub enum CommandType {
@@ -55,7 +56,7 @@ const STRING_COMMANDS: &[&str] = &[
 const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rpop"];
 const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers", "sismember", "scard", "sdiff"];
 const HASH_COMMANDS: &[&str] = &["hset", "hget", "hgetall", "hincrby"];
-const SORTED_SET_COMMANDS: &[&str] = &["zadd"];
+const SORTED_SET_COMMANDS: &[&str] = &["zadd", "zrange"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -147,6 +148,7 @@ impl FromStr for SortedSetCommandType {
     fn from_str(s: &str) -> Result<SortedSetCommandType, Self::Err> {
         match s {
             "zadd" => Ok(SortedSetCommandType::Add),
+            "zrange" => Ok(SortedSetCommandType::Range),
             _ => Err(()),
         }
     }
