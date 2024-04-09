@@ -197,5 +197,9 @@ fn handle_sorted_set_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        SortedSetCommandType::Rem => match sorted_set::ZRemCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
