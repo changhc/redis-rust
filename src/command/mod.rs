@@ -201,5 +201,9 @@ fn handle_sorted_set_command(
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
+        SortedSetCommandType::Rank => match sorted_set::ZRankCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
     }
 }
