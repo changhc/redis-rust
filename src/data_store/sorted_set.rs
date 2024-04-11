@@ -57,7 +57,9 @@ impl SortedSet {
     }
 
     pub fn get_rank(&self, element: &str) -> Option<u64> {
-        self.elements.get(element).map(|score| self.skip_list.get_rank(score, element))
+        self.elements
+            .get(element)
+            .map(|score| self.skip_list.get_rank(score, element))
     }
 }
 
