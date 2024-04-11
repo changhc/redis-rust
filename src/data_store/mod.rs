@@ -1,4 +1,5 @@
 mod sorted_set;
+mod stream;
 
 use crate::error::{ExecutionError, InternalError};
 
