@@ -37,4 +37,9 @@ impl RadixTree {
         self.top_id = new_id;
         Ok(())
     }
+
+    pub fn remove(&mut self, id: [u64; 2]) {
+        let id = TreeNodeId(id);
+        self.root.remove_child(id.words());
+    }
 }

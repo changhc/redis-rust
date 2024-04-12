@@ -27,8 +27,12 @@ impl TreeNode {
         }
     }
 
-    pub fn get_child(&self, key: &u8) -> Option<&Box<TreeNode>> {
+    fn get_child(&self, key: &u8) -> Option<&Box<TreeNode>> {
         self.children.get(key)
+    }
+
+    fn get_child_mut(&mut self, key: &u8) -> Option<&mut Box<TreeNode>> {
+        self.children.get_mut(key)
     }
 
     pub fn insert_child(
@@ -45,14 +49,14 @@ impl TreeNode {
         // will not lead to any stack overflow.
         match words.next() {
             Some(word) => {
-                let node = match self.children.get_mut(&key) {
+                let node = match self.get_child_mut(&key) {
                     Some(v) => v,
                     None => {
                         self.children.insert(
                             key,
                             Box::new(TreeNode::new(None, key, None, HashMap::new())),
                         );
-                        self.children.get_mut(&key).unwrap()
+                        self.get_child_mut(&key).unwrap()
                     }
                 };
                 node.insert_child(word, words, id, values)
@@ -68,6 +72,17 @@ impl TreeNode {
                     Box::new(TreeNode::new(Some(id), key, values, HashMap::new())),
                 );
                 Ok(())
+            }
+        }
+    }
+
+    pub fn remove_child(&mut self, mut words: TreeNodeIdIterator) {
+        if let Some(key) = words.next() {
+            if let Some(child) = self.get_child_mut(&key) {
+                child.remove_child(words);
+                if child.children.is_empty() {
+                    self.children.remove(&key);
+                }
             }
         }
     }
@@ -226,17 +241,14 @@ mod test {
         #[test]
         fn should_insert_child() {
             let id = TreeNodeId([0x0908070605040302, 0xf9f8f7f6f5f4f3f2]);
-            let mut words = TreeNodeIdIterator {
-                id: id.clone(),
-                ptr: 0,
-            };
+            let mut words = id.words();
             let key = words.next().unwrap();
             let values = vec![["foo".to_string(), "bar".to_string()]];
             let mut root = TreeNode::new(None, 0, None, HashMap::new());
             root.insert_child(key, words, id, Some(values.clone()))
                 .unwrap();
             let expected_keys = [
-                0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 2, 3, 4, 5, 6, 7, 8,
+                9, 8, 7, 6, 5, 4, 3, 2, 0xf9, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4, 0xf3,
             ];
             let mut node = &root;
             for k in expected_keys {
@@ -247,8 +259,8 @@ mod test {
                 assert!(node.id.is_none());
                 assert_eq!(node.children.len(), 1)
             }
-            node = node.get_child(&9).unwrap();
-            assert_eq!(node.key, 9);
+            node = node.get_child(&0xf2).unwrap();
+            assert_eq!(node.key, 0xf2);
             assert_eq!(node.values.as_ref().unwrap(), &values);
             assert_eq!(node.children.len(), 0);
         }
@@ -257,10 +269,7 @@ mod test {
         fn should_not_insert_duplicates() {
             fn run(root: &mut TreeNode) -> Result<(), Box<dyn std::error::Error>> {
                 let id = TreeNodeId([12, 34]);
-                let mut words = TreeNodeIdIterator {
-                    id: id.clone(),
-                    ptr: 0,
-                };
+                let mut words = id.words();
                 let key = words.next().unwrap();
                 root.insert_child(key, words, id.clone(), Some(vec![]))
             }
@@ -268,6 +277,45 @@ mod test {
             run(&mut root).unwrap();
             let err = run(&mut root).err().unwrap();
             assert_eq!(err.to_string(), "INTERNAL Key already exists");
+        }
+
+        #[test]
+        fn should_remove_child() {
+            fn insert(
+                root: &mut TreeNode,
+                id: TreeNodeId,
+            ) -> Result<(), Box<dyn std::error::Error>> {
+                let mut words = id.words();
+                let key = words.next().unwrap();
+                root.insert_child(key, words, id.clone(), Some(vec![]))
+            }
+            let mut root = TreeNode::new(None, 0, None, HashMap::new());
+            let id0 = TreeNodeId([0xffffffffffffffff, 0xffffffffffffffff]);
+            let id1 = TreeNodeId([0xffffffffffffffff, 0xfffffffffffffffe]);
+            insert(&mut root, id0.clone()).unwrap();
+            insert(&mut root, id1.clone()).unwrap();
+
+            {
+                let mut node = &root;
+                for _ in 0..15 {
+                    assert_eq!(node.children.len(), 1);
+                    node = node.get_child(&0xff).unwrap();
+                }
+                assert_eq!(node.children.len(), 2);
+            }
+
+            root.remove_child(id0.words());
+            {
+                let mut node = &root;
+                for _ in 0..15 {
+                    node = node.get_child(&0xff).unwrap();
+                }
+                assert_eq!(node.children.len(), 1);
+                assert!(node.get_child(&0xfe).is_some());
+            }
+
+            root.remove_child(id1.words());
+            assert!(root.children.is_empty());
         }
     }
 }
