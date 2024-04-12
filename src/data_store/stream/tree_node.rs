@@ -1,6 +1,7 @@
-use crate::error::StreamError;
+use crate::error::{InternalError, StreamError};
 use std::{
     collections::HashMap,
+    fmt::Display,
     ops::{Deref, DerefMut},
 };
 
@@ -26,10 +27,6 @@ impl TreeNode {
         }
     }
 
-    pub fn next(&self, key: &u8) -> Option<&Box<TreeNode>> {
-        self.children.get(key)
-    }
-
     pub fn get_child(&self, key: &u8) -> Option<&Box<TreeNode>> {
         self.children.get(key)
     }
@@ -40,7 +37,12 @@ impl TreeNode {
         mut words: TreeNodeIdIterator,
         id: TreeNodeId,
         values: Option<Vec<[String; 2]>>,
-    ) {
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // `key` is the current node index. Using `words.next()` here in a weird way to know
+        // if we have reached the leaf node.
+        // insert_child is implemented recursively because rust complains a lot about the
+        // iterative implementation. Since the depth is at most 8 * 2 in this tree, this
+        // will not lead to any stack overflow.
         match words.next() {
             Some(word) => {
                 let node = match self.children.get_mut(&key) {
@@ -53,13 +55,19 @@ impl TreeNode {
                         self.children.get_mut(&key).unwrap()
                     }
                 };
-                node.insert_child(word, words, id, values);
+                node.insert_child(word, words, id, values)
             }
             None => {
+                // Reached the parent of the leaf level
+                if self.children.contains_key(&key) {
+                    log::error!("Failed to insert node with ID {}. Node already exists.", id);
+                    return Err(Box::new(InternalError::KeyError));
+                }
                 self.children.insert(
                     key,
                     Box::new(TreeNode::new(Some(id), key, values, HashMap::new())),
                 );
+                Ok(())
             }
         }
     }
@@ -85,12 +93,10 @@ impl TreeNodeId {
     pub fn incr(&self) -> Result<TreeNodeId, Box<dyn std::error::Error>> {
         if let Some(v) = self[1].checked_add(1) {
             Ok(TreeNodeId([self[0], v]))
+        } else if let Some(v) = self[0].checked_add(1) {
+            Ok(TreeNodeId([v, 0]))
         } else {
-            if let Some(v) = self[0].checked_add(1) {
-                Ok(TreeNodeId([v, 0]))
-            } else {
-                Err(Box::new(StreamError::IdExhausted))
-            }
+            Err(Box::new(StreamError::IdExhausted))
         }
     }
 }
@@ -129,6 +135,12 @@ impl PartialOrd for TreeNodeId {
         } else {
             Some(std::cmp::Ordering::Greater)
         }
+    }
+}
+
+impl Display for TreeNodeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}-{}", self[0], self[1])
     }
 }
 
@@ -221,7 +233,8 @@ mod test {
             let key = words.next().unwrap();
             let values = vec![["foo".to_string(), "bar".to_string()]];
             let mut root = TreeNode::new(None, 0, None, HashMap::new());
-            root.insert_child(key, words, id, Some(values.clone()));
+            root.insert_child(key, words, id, Some(values.clone()))
+                .unwrap();
             let expected_keys = [
                 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 2, 3, 4, 5, 6, 7, 8,
             ];
@@ -238,6 +251,23 @@ mod test {
             assert_eq!(node.key, 9);
             assert_eq!(node.values.as_ref().unwrap(), &values);
             assert_eq!(node.children.len(), 0);
+        }
+
+        #[test]
+        fn should_not_insert_duplicates() {
+            fn run(root: &mut TreeNode) -> Result<(), Box<dyn std::error::Error>> {
+                let id = TreeNodeId([12, 34]);
+                let mut words = TreeNodeIdIterator {
+                    id: id.clone(),
+                    ptr: 0,
+                };
+                let key = words.next().unwrap();
+                root.insert_child(key, words, id.clone(), Some(vec![]))
+            }
+            let mut root = TreeNode::new(None, 0, None, HashMap::new());
+            run(&mut root).unwrap();
+            let err = run(&mut root).err().unwrap();
+            assert_eq!(err.to_string(), "INTERNAL Key already exists");
         }
     }
 }

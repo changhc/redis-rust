@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap};
+use std::collections::HashMap;
 
 use super::tree_node::{TreeNode, TreeNodeId};
 use crate::error::StreamError;
@@ -33,7 +33,7 @@ impl RadixTree {
         let mut words = new_id.words();
         let word = words.next().unwrap();
         self.root
-            .insert_child(word, words, new_id.clone(), Some(values));
+            .insert_child(word, words, new_id.clone(), Some(values))?;
         self.top_id = new_id;
         Ok(())
     }
