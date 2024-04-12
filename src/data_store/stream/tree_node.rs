@@ -27,8 +27,11 @@ impl TreeNode {
         }
     }
 
-    fn get_child(&self, key: &u8) -> Option<&Box<TreeNode>> {
-        self.children.get(key)
+    fn get_child(&self, key: &u8) -> Option<&TreeNode> {
+        match self.children.get(key) {
+            Some(v) => Some(v),
+            None => None
+        }
     }
 
     fn get_child_mut(&mut self, key: &u8) -> Option<&mut Box<TreeNode>> {
@@ -236,7 +239,7 @@ mod test {
     mod test_node {
         use std::collections::HashMap;
 
-        use crate::data_store::stream::tree_node::{TreeNode, TreeNodeId, TreeNodeIdIterator};
+        use crate::data_store::stream::tree_node::{TreeNode, TreeNodeId};
 
         #[test]
         fn should_insert_child() {
