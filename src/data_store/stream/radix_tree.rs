@@ -24,7 +24,10 @@ impl RadixTree {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let new_id = match id {
             Some(v) => TreeNodeId(v),
-            None => self.top_id.incr()?,
+            None => match self.top_id.incr() {
+                Ok(v) => v,
+                Err(_) => return Err(Box::new(StreamError::IdExhausted)),
+            },
         };
         if new_id <= self.top_id {
             return Err(Box::new(StreamError::IdNotGreaterThanStreamTop));

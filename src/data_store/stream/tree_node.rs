@@ -1,4 +1,4 @@
-use crate::error::{InternalError, StreamError};
+use crate::error::InternalError;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -30,7 +30,7 @@ impl TreeNode {
     fn get_child(&self, key: &u8) -> Option<&TreeNode> {
         match self.children.get(key) {
             Some(v) => Some(v),
-            None => None
+            None => None,
         }
     }
 
@@ -108,13 +108,13 @@ impl TreeNodeId {
         TreeNodeIdIterator { id, ptr: 0 }
     }
 
-    pub fn incr(&self) -> Result<TreeNodeId, Box<dyn std::error::Error>> {
+    pub fn incr(&self) -> Result<TreeNodeId, ()> {
         if let Some(v) = self[1].checked_add(1) {
             Ok(TreeNodeId([self[0], v]))
         } else if let Some(v) = self[0].checked_add(1) {
             Ok(TreeNodeId([v, 0]))
         } else {
-            Err(Box::new(StreamError::IdExhausted))
+            Err(())
         }
     }
 }
@@ -229,10 +229,7 @@ mod test {
             assert_eq!(id.incr().unwrap(), TreeNodeId([1, 0]));
 
             let id = TreeNodeId([u64::MAX, u64::MAX]);
-            assert_eq!(
-                id.incr().err().unwrap().to_string(),
-                "The stream has exhausted the last possible ID, unable to add more items"
-            );
+            assert!(id.incr().is_err());
         }
     }
 
