@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use super::tree_node::{TreeNode, TreeNodeId};
-use crate::error::StreamError;
 
 pub struct RadixTree {
     root: Box<TreeNode>,
@@ -17,28 +16,41 @@ impl RadixTree {
         }
     }
 
+    pub fn next_available_id(&self, higher_part: Option<u64>) -> Result<TreeNodeId, ()> {
+        match higher_part {
+            Some(v) => {
+                let id = TreeNodeId([v, 0]);
+                let mut words = id.words();
+                let mut node = self.root.as_ref();
+                for _ in 0..8 {
+                    let key = words.next().unwrap();
+                    match node.get_child(&key) {
+                        Some(n) => node = n,
+                        None => return Ok(id),
+                    }
+                }
+                let greatest_node = node.get_greatest_child();
+                greatest_node.get_id().unwrap().incr()
+            }
+            None => self.top_id.incr(),
+        }
+    }
+
+    pub fn top_id(&self) -> &TreeNodeId {
+        &self.top_id
+    }
+
     pub fn insert(
         &mut self,
-        id: Option<[u64; 2]>,
+        new_id: TreeNodeId,
         values: Vec<[String; 2]>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let new_id = match id {
-            Some(v) => TreeNodeId(v),
-            None => match self.top_id.incr() {
-                Ok(v) => v,
-                Err(_) => return Err(Box::new(StreamError::IdExhausted)),
-            },
-        };
-        if new_id <= self.top_id {
-            return Err(Box::new(StreamError::IdNotGreaterThanStreamTop));
-        }
-
+    ) -> Result<String, Box<dyn std::error::Error>> {
         let mut words = new_id.words();
         let word = words.next().unwrap();
         self.root
             .insert_child(word, words, new_id.clone(), Some(values))?;
         self.top_id = new_id;
-        Ok(())
+        Ok(self.top_id.to_string())
     }
 
     pub fn remove(&mut self, id: [u64; 2]) {

@@ -6,7 +6,7 @@ use std::{
 };
 
 pub struct TreeNode {
-    pub id: Option<TreeNodeId>,
+    id: Option<TreeNodeId>,
     key: u8,
     values: Option<Vec<[String; 2]>>,
     children: HashMap<u8, Box<TreeNode>>,
@@ -27,7 +27,19 @@ impl TreeNode {
         }
     }
 
-    fn get_child(&self, key: &u8) -> Option<&TreeNode> {
+    pub fn get_id(&self) -> Option<TreeNodeId> {
+        self.id.clone()
+    }
+
+    pub fn get_greatest_child(&self) -> &TreeNode {
+        if self.children.is_empty() {
+            return &self;
+        }
+        let max_key = self.children.keys().max().unwrap();
+        return self.children.get(max_key).unwrap().get_greatest_child();
+    }
+
+    pub fn get_child(&self, key: &u8) -> Option<&TreeNode> {
         match self.children.get(key) {
             Some(v) => Some(v),
             None => None,
@@ -237,6 +249,33 @@ mod test {
         use std::collections::HashMap;
 
         use crate::data_store::stream::tree_node::{TreeNode, TreeNodeId};
+
+        #[test]
+        fn should_get_greatest_child() {
+            let mut root = TreeNode::new(None, 0, None, HashMap::new());
+            for i in 0..16 {
+                let mut new_node = Box::new(TreeNode::new(None, i, None, HashMap::new()));
+                for j in 0..16 {
+                    let child = Box::new(TreeNode::new(
+                        Some(TreeNodeId([0, (i * 16) as u64 + j])),
+                        j as u8,
+                        None,
+                        HashMap::new(),
+                    ));
+                    new_node.children.insert(j as u8, child);
+                }
+                root.children.insert(i, new_node);
+            }
+            assert_eq!(root.get_greatest_child().get_id().unwrap()[1], 0xff);
+            assert_eq!(
+                root.get_child(&0)
+                    .unwrap()
+                    .get_greatest_child()
+                    .get_id()
+                    .unwrap()[1],
+                0xf
+            );
+        }
 
         #[test]
         fn should_insert_child() {
