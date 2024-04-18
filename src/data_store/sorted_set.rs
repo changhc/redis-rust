@@ -55,6 +55,12 @@ impl SortedSet {
     pub fn get_values_by_rank(&self, start: u64, stop: u64) -> Vec<String> {
         self.skip_list.get_values_by_rank(start, stop)
     }
+
+    pub fn get_rank(&self, element: &str) -> Option<u64> {
+        self.elements
+            .get(element)
+            .map(|score| self.skip_list.get_rank(score, element))
+    }
 }
 
 struct ListNode {
@@ -335,6 +341,38 @@ impl SkipList {
             }
         }
         result
+    }
+
+    pub fn get_rank(&self, score: &f64, value: &str) -> u64 {
+        let mut level: i16 = self.max_level as i16;
+        let mut current_node_id = self.head_id;
+        let mut num_seen_values = 0;
+        while level >= 0 {
+            let current_node = self.nodes.get(&current_node_id).unwrap();
+            let current_node_score = current_node.borrow().score;
+            if score == &current_node_score {
+                break;
+            }
+            let next_node_id = current_node.borrow().get_next(level as u8).unwrap();
+            let next_node = self.nodes.get(&next_node_id).unwrap();
+            let next_node_score = next_node.borrow().score;
+            if score >= &next_node_score {
+                current_node_id = next_node_id;
+                num_seen_values += current_node.borrow().get_span(level as u8);
+            } else {
+                level -= 1;
+            }
+        }
+        let current_node = self.nodes.get(&current_node_id).unwrap();
+        let current_node_score = current_node.borrow().score;
+        assert!(score == &current_node_score);
+        for v in current_node.borrow().values.iter() {
+            num_seen_values += 1;
+            if v == value {
+                break;
+            }
+        }
+        num_seen_values - 1
     }
 
     pub fn remove(&mut self, score: f64, value: &str) {
