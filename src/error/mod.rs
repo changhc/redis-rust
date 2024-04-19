@@ -49,11 +49,3 @@ pub enum HIncrByCommandError {
     #[error("hash value is not an integer")]
     InvalidHashValue,
 }
-
-#[derive(Error, Debug)]
-pub enum StreamError {
-    #[error("The ID specified in XADD is equal or smaller than the target stream top item")]
-    IdNotGreaterThanStreamTop,
-    #[error("The stream has exhausted the last possible ID, unable to add more items")]
-    IdExhausted,
-}
