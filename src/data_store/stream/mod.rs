@@ -9,6 +9,12 @@ pub struct Stream {
     tree: RadixTree,
 }
 
+impl Default for Stream {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Stream {
     pub fn new() -> Self {
         Stream {
