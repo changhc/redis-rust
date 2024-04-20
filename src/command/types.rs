@@ -43,6 +43,10 @@ pub enum SortedSetCommandType {
     Rank,
 }
 
+pub enum StreamCommandType {
+    Add,
+}
+
 pub enum CommandType {
     Ping,
     String(StringCommandType),
@@ -50,6 +54,7 @@ pub enum CommandType {
     Set(SetCommandType),
     Hash(HashCommandType),
     SortedSet(SortedSetCommandType),
+    Stream(StreamCommandType),
 }
 
 const STRING_COMMANDS: &[&str] = &[
@@ -59,6 +64,7 @@ const LIST_COMMANDS: &[&str] = &["lpush", "lpop", "lrange", "llen", "rpush", "rp
 const SET_COMMANDS: &[&str] = &["sadd", "srem", "smembers", "sismember", "scard", "sdiff"];
 const HASH_COMMANDS: &[&str] = &["hset", "hget", "hgetall", "hincrby"];
 const SORTED_SET_COMMANDS: &[&str] = &["zadd", "zrange", "zrem", "zrank"];
+const STREAM_COMMANDS: &[&str] = &["xadd"];
 
 impl FromStr for CommandType {
     type Err = ();
@@ -74,6 +80,9 @@ impl FromStr for CommandType {
             s if HASH_COMMANDS.contains(&s) => Ok(CommandType::Hash(HashCommandType::from_str(s)?)),
             s if SORTED_SET_COMMANDS.contains(&s) => {
                 Ok(CommandType::SortedSet(SortedSetCommandType::from_str(s)?))
+            }
+            s if STREAM_COMMANDS.contains(&s) => {
+                Ok(CommandType::Stream(StreamCommandType::from_str(s)?))
             }
             _ => Err(()),
         }
@@ -153,6 +162,17 @@ impl FromStr for SortedSetCommandType {
             "zrange" => Ok(SortedSetCommandType::Range),
             "zrem" => Ok(SortedSetCommandType::Rem),
             "zrank" => Ok(SortedSetCommandType::Rank),
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for StreamCommandType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<StreamCommandType, Self::Err> {
+        match s {
+            "xadd" => Ok(StreamCommandType::Add),
             _ => Err(()),
         }
     }
