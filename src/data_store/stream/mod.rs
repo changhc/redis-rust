@@ -10,6 +10,12 @@ pub struct Stream {
 }
 
 impl Stream {
+    pub fn new() -> Self {
+        Stream {
+            tree: RadixTree::new(),
+        }
+    }
+
     pub fn insert(
         &mut self,
         id: Option<[u64; 2]>,
