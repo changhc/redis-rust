@@ -7,6 +7,8 @@ use sorted_set::SortedSet;
 use std::collections::{HashMap, HashSet, LinkedList};
 use std::fmt::{Display, Formatter};
 
+use self::stream::Stream;
+
 pub struct DataStore {
     ds: HashMap<String, RedisEntry>,
 }
@@ -168,6 +170,33 @@ impl DataStore {
         }
     }
 
+    pub fn get_stream_mut(
+        &mut self,
+        key: &String,
+    ) -> Result<Option<&mut Stream>, Box<dyn std::error::Error>> {
+        match self.ds.get_mut(key) {
+            Some(entry) => match entry.type_ {
+                RedisEntryType::Stream => match &mut entry.stream {
+                    Some(v) => Ok(Some(v)),
+                    None => Err(Self::throw_integration_error(key, RedisEntryType::Stream)),
+                },
+                _ => Err(Box::new(ExecutionError::IncorrectType)),
+            },
+            None => Ok(None),
+        }
+    }
+
+    pub fn insert_stream(&mut self, key: &String) -> Result<(), Box<dyn std::error::Error>> {
+        match self.ds.get(key) {
+            Some(_) => Err(Box::new(InternalError::KeyError)),
+            None => {
+                let s = RedisEntry::init_stream();
+                self.ds.insert(key.clone(), s);
+                Ok(())
+            }
+        }
+    }
+
     pub fn drop_key(&mut self, key: &String) {
         self.ds.remove(key);
     }
@@ -200,6 +229,7 @@ pub enum RedisEntryType {
     Set,
     Hash,
     SortedSet,
+    Stream,
 }
 
 impl Display for RedisEntryType {
@@ -216,6 +246,7 @@ pub struct RedisEntry {
     pub set: Option<HashSet<String>>,
     pub hash: Option<HashMap<String, String>>,
     pub sorted_set: Option<SortedSet>,
+    pub stream: Option<Stream>,
 }
 
 impl RedisEntry {
@@ -255,6 +286,14 @@ impl RedisEntry {
         RedisEntry {
             type_: RedisEntryType::SortedSet,
             sorted_set: Some(SortedSet::new()),
+            ..Default::default()
+        }
+    }
+
+    pub fn init_stream() -> Self {
+        RedisEntry {
+            type_: RedisEntryType::Stream,
+            stream: Some(Stream::new()),
             ..Default::default()
         }
     }

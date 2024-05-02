@@ -33,7 +33,7 @@ impl TreeNode {
 
     pub fn get_greatest_child(&self) -> &TreeNode {
         if self.children.is_empty() {
-            return &self;
+            return self;
         }
         let max_key = self.children.keys().max().unwrap();
         return self.children.get(max_key).unwrap().get_greatest_child();
