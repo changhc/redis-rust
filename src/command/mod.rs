@@ -5,14 +5,16 @@ pub use base::Command;
 use ping::PingCommand;
 mod types;
 use std::str::FromStr;
-use types::{CommandType, HashCommandType, ListCommandType, SetCommandType, StringCommandType};
-
-use self::types::SortedSetCommandType;
+use types::{
+    CommandType, HashCommandType, ListCommandType, SetCommandType, SortedSetCommandType,
+    StreamCommandType, StringCommandType,
+};
 
 mod hash;
 mod list;
 mod set;
 mod sorted_set;
+mod stream;
 mod string;
 
 #[derive(Debug)]
@@ -34,6 +36,7 @@ impl CommandFactory {
                 CommandType::Set(v) => handle_set_command(v, body),
                 CommandType::Hash(v) => handle_hash_command(v, body),
                 CommandType::SortedSet(v) => handle_sorted_set_command(v, body),
+                CommandType::Stream(v) => handle_stream_command(v, body),
             },
             Err(_) => Err(RequestError::UnsupportedCommand(command)),
         }
@@ -202,6 +205,18 @@ fn handle_sorted_set_command(
             Err(e) => Err(e),
         },
         SortedSetCommandType::Rank => match sorted_set::ZRankCommand::new(body) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
+        },
+    }
+}
+
+fn handle_stream_command(
+    v: StreamCommandType,
+    body: Vec<String>,
+) -> Result<Box<dyn Command>, RequestError> {
+    match v {
+        StreamCommandType::Add => match stream::XAddCommand::new(body) {
             Ok(v) => Ok(v),
             Err(e) => Err(e),
         },
